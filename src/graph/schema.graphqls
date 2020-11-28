@@ -1,0 +1,19 @@
+type Shop {
+    id: ID!
+    shop_name: String
+    books: [Book!]!
+}
+
+type Book {
+    id: ID!
+    book_title: String
+}
+
+type Query {
+    shop(id: ID!): Shop!
+    shops(ids: [ID!]!): [Shop!]
+
+    book(id: ID!): Book!
+    books(ids: [ID!]!): [Book!]
+    booksByShopId(shop_id: ID!): [Book!]
+}

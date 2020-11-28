@@ -1,0 +1,49 @@
+version: '3.1'
+services:
+  golang:
+    build:
+      context: ./golang
+    tty: true
+    ports:
+      - 8080:8080
+      - 2345:2345
+    # command: air
+    security_opt:
+      - apparmor:unconfined
+    cap_add:
+      - SYS_PTRACE
+    volumes:
+      - ./src:/go/src/app
+    environment:
+      - GOPATH=/go
+      - TZ=Asia/Tokyo
+    restart: always
+    depends_on:
+      - postgres
+
+  postgres:
+    build:
+      context: ./postgres
+    ports:
+      - 5432:5432
+    volumes:
+      - ./postgres/pgdata:/var/lib/postgresql/data
+      - ./postgres/pginitdb:/docker-entrypoint-initdb.d
+    environment:
+      - POSTGRES_PASSWORD=postgres
+      - TZ=Asia/Tokyo
+    restart: always
+
+  pgadmin4:
+    image: dpage/pgadmin4:4.27
+    ports:
+      - 8081:80
+      - 443:443
+    volumes:
+      - ./pgadmin4:/var/lib/pgadmin
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=pgadmin4@pgadmin.org
+      - PGADMIN_DEFAULT_PASSWORD=pgadmin
+    depends_on:
+      - postgres
+    restart: always

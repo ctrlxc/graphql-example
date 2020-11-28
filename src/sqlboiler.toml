@@ -1,0 +1,8 @@
+[psql]
+  dbname = "graphql"
+  host   = "postgres"
+  port   = 5432
+  user   = "graphql"
+  pass   = "graphql"
+  sslmode = "disable"
+  schema = "graphql"
