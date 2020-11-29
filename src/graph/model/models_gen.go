@@ -2,13 +2,245 @@
 
 package model
 
+import (
+	"fmt"
+	"io"
+	"strconv"
+	"time"
+)
+
+type Connection interface {
+	IsConnection()
+}
+
+type Edge interface {
+	IsEdge()
+}
+
+type Node interface {
+	IsNode()
+}
+
 type Book struct {
-	ID        int64   `json:"id"`
-	BookTitle *string `json:"book_title"`
+	ID        int64      `json:"id"`
+	BookTitle *string    `json:"bookTitle"`
+	CreatedAt *time.Time `json:"createdAt"`
+	UpdatedAt *time.Time `json:"updatedAt"`
+}
+
+// The connection type for Book.
+type BookConnection struct {
+	// A list of edges.
+	Edges []*BookEdge `json:"edges"`
+	// A list of nodes.
+	Nodes []*Book `json:"nodes"`
+	// Information to aid in pagination.
+	PageInfo *PageInfo `json:"pageInfo"`
+	// Identifies the total count of items in the connection.
+	TotalCount int `json:"totalCount"`
+}
+
+// An edge in a connection.
+type BookEdge struct {
+	// A cursor for use in pagination.
+	Cursor string `json:"cursor"`
+	// The item at the end of the edge.
+	Node *Book `json:"node"`
+}
+
+// Ordering options for Book.
+type BookOrder struct {
+	// The ordering direction.
+	Direction *OrderDirection `json:"direction"`
+	// The field to order Book by.
+	Field *BookOrderField `json:"field"`
+}
+
+// Information about pagination in a connection.
+type PageInfo struct {
+	// When paginating forwards, the cursor to continue.
+	EndCursor *string `json:"endCursor"`
+	// When paginating forwards, are there more items?
+	HasNextPage bool `json:"hasNextPage"`
+	// When paginating backwards, are there more items?
+	HasPreviousPage bool `json:"hasPreviousPage"`
+	// When paginating backwards, the cursor to continue.
+	StartCursor *string `json:"startCursor"`
+}
+
+type PaginationInput struct {
+	First *int    `json:"first"`
+	After *string `json:"after"`
 }
 
 type Shop struct {
-	ID       int64   `json:"id"`
-	ShopName *string `json:"shop_name"`
-	Books    []*Book `json:"books"`
+	ID        int64      `json:"id"`
+	ShopName  *string    `json:"shopName"`
+	CreatedAt *time.Time `json:"createdAt"`
+	UpdatedAt *time.Time `json:"updatedAt"`
+	Books     []*Book    `json:"books"`
+}
+
+// The connection type for Shop.
+type ShopConnection struct {
+	// A list of edges.
+	Edges []*ShopEdge `json:"edges"`
+	// A list of nodes.
+	Nodes []*Shop `json:"nodes"`
+	// Information to aid in pagination.
+	PageInfo *PageInfo `json:"pageInfo"`
+	// Identifies the total count of items in the connection.
+	TotalCount int `json:"totalCount"`
+}
+
+// An edge in a connection.
+type ShopEdge struct {
+	// A cursor for use in pagination.
+	Cursor string `json:"cursor"`
+	// The item at the end of the edge.
+	Node *Shop `json:"node"`
+}
+
+// Ordering options for Shop.
+type ShopOrder struct {
+	// The field to order Shop by.
+	Field *ShopOrderField `json:"field"`
+	// The ordering direction.
+	Direction *OrderDirection `json:"direction"`
+}
+
+// Properties by which book can be ordered.
+type BookOrderField string
+
+const (
+	BookOrderFieldID        BookOrderField = "ID"
+	BookOrderFieldBookTitle BookOrderField = "BOOK_TITLE"
+	BookOrderFieldCreatedAt BookOrderField = "CREATED_AT"
+	BookOrderFieldUpdateAt  BookOrderField = "UPDATE_AT"
+)
+
+var AllBookOrderField = []BookOrderField{
+	BookOrderFieldID,
+	BookOrderFieldBookTitle,
+	BookOrderFieldCreatedAt,
+	BookOrderFieldUpdateAt,
+}
+
+func (e BookOrderField) IsValid() bool {
+	switch e {
+	case BookOrderFieldID, BookOrderFieldBookTitle, BookOrderFieldCreatedAt, BookOrderFieldUpdateAt:
+		return true
+	}
+	return false
+}
+
+func (e BookOrderField) String() string {
+	return string(e)
+}
+
+func (e *BookOrderField) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = BookOrderField(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid BookOrderField", str)
+	}
+	return nil
+}
+
+func (e BookOrderField) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+// Possible directions in which to order a list of items when provided an `orderBy` argument.
+type OrderDirection string
+
+const (
+	// Specifies an ascending order for a given `orderBy` argument.
+	OrderDirectionAsc OrderDirection = "ASC"
+	// Specifies a descending order for a given `orderBy` argument.
+	OrderDirectionDesc OrderDirection = "DESC"
+)
+
+var AllOrderDirection = []OrderDirection{
+	OrderDirectionAsc,
+	OrderDirectionDesc,
+}
+
+func (e OrderDirection) IsValid() bool {
+	switch e {
+	case OrderDirectionAsc, OrderDirectionDesc:
+		return true
+	}
+	return false
+}
+
+func (e OrderDirection) String() string {
+	return string(e)
+}
+
+func (e *OrderDirection) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = OrderDirection(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid OrderDirection", str)
+	}
+	return nil
+}
+
+func (e OrderDirection) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+// Properties by which shop can be ordered.
+type ShopOrderField string
+
+const (
+	ShopOrderFieldID        ShopOrderField = "ID"
+	ShopOrderFieldShopName  ShopOrderField = "SHOP_NAME"
+	ShopOrderFieldCreatedAt ShopOrderField = "CREATED_AT"
+	ShopOrderFieldUpdateAt  ShopOrderField = "UPDATE_AT"
+)
+
+var AllShopOrderField = []ShopOrderField{
+	ShopOrderFieldID,
+	ShopOrderFieldShopName,
+	ShopOrderFieldCreatedAt,
+	ShopOrderFieldUpdateAt,
+}
+
+func (e ShopOrderField) IsValid() bool {
+	switch e {
+	case ShopOrderFieldID, ShopOrderFieldShopName, ShopOrderFieldCreatedAt, ShopOrderFieldUpdateAt:
+		return true
+	}
+	return false
+}
+
+func (e ShopOrderField) String() string {
+	return string(e)
+}
+
+func (e *ShopOrderField) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = ShopOrderField(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid ShopOrderField", str)
+	}
+	return nil
+}
+
+func (e ShopOrderField) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
 }

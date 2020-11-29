@@ -10,6 +10,7 @@ require (
 	github.com/gofrs/uuid v3.3.0+incompatible // indirect
 	github.com/golang/snappy v0.0.2 // indirect
 	github.com/graph-gophers/dataloader v5.0.0+incompatible
+	github.com/jinzhu/gorm v1.9.16
 	github.com/kat-co/vala v0.0.0-20170210184112-42e1d8b61f12
 	github.com/lib/pq v1.8.0
 	github.com/magiconair/properties v1.8.4 // indirect

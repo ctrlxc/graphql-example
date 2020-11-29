@@ -9,11 +9,11 @@ import (
 	"context"
 )
 
-func (r *queryResolver) Shop(ctx context.Context, id int64) (*model1.Shop, error) {
+func (r *queryResolver) Shop(ctx context.Context, id int64, input *model1.PaginationInput) (*model1.Shop, error) {
 	return r.shop(ctx, id)
 }
 
-func (r *queryResolver) Shops(ctx context.Context, ids []int64) ([]*model1.Shop, error) {
+func (r *queryResolver) Shops(ctx context.Context, ids []int64, after *string, before *string, first int, last *int, orderBy []*model1.ShopOrder) (*model1.ShopConnection, error) {
 	return r.shops(ctx, ids)
 }
 
@@ -21,11 +21,11 @@ func (r *queryResolver) Book(ctx context.Context, id int64) (*model1.Book, error
 	return r.book(ctx, id)
 }
 
-func (r *queryResolver) Books(ctx context.Context, ids []int64) ([]*model1.Book, error) {
+func (r *queryResolver) Books(ctx context.Context, ids []int64, after *string, before *string, first int, last *int, orderBy []*model1.BookOrder) (*model1.BookConnection, error) {
 	return r.books(ctx, ids)
 }
 
-func (r *queryResolver) BooksByShopID(ctx context.Context, shopID int64) ([]*model1.Book, error) {
+func (r *queryResolver) BooksByShopID(ctx context.Context, shopID int64, after *string, before *string, first int, last *int, orderBy []*model1.BookOrder) (*model1.BookConnection, error) {
 	return r.booksByShopID(ctx, shopID)
 }
 
