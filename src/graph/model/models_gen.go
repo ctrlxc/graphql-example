@@ -22,11 +22,13 @@ type Node interface {
 }
 
 type Book struct {
-	ID        int64      `json:"id"`
+	ID        string     `json:"id"`
 	BookTitle *string    `json:"bookTitle"`
 	CreatedAt *time.Time `json:"createdAt"`
 	UpdatedAt *time.Time `json:"updatedAt"`
 }
+
+func (Book) IsNode() {}
 
 // The connection type for Book.
 type BookConnection struct {
@@ -40,6 +42,8 @@ type BookConnection struct {
 	TotalCount int `json:"totalCount"`
 }
 
+func (BookConnection) IsConnection() {}
+
 // An edge in a connection.
 type BookEdge struct {
 	// A cursor for use in pagination.
@@ -48,38 +52,37 @@ type BookEdge struct {
 	Node *Book `json:"node"`
 }
 
+func (BookEdge) IsEdge() {}
+
 // Ordering options for Book.
 type BookOrder struct {
-	// The ordering direction.
-	Direction *OrderDirection `json:"direction"`
 	// The field to order Book by.
 	Field *BookOrderField `json:"field"`
+	// The ordering direction.
+	Direction *OrderDirection `json:"direction"`
 }
 
 // Information about pagination in a connection.
 type PageInfo struct {
-	// When paginating forwards, the cursor to continue.
-	EndCursor *string `json:"endCursor"`
-	// When paginating forwards, are there more items?
-	HasNextPage bool `json:"hasNextPage"`
-	// When paginating backwards, are there more items?
-	HasPreviousPage bool `json:"hasPreviousPage"`
 	// When paginating backwards, the cursor to continue.
 	StartCursor *string `json:"startCursor"`
-}
-
-type PaginationInput struct {
-	First *int    `json:"first"`
-	After *string `json:"after"`
+	// When paginating forwards, the cursor to continue.
+	EndCursor *string `json:"endCursor"`
+	// When paginating backwards, are there more items?
+	HasPreviousPage bool `json:"hasPreviousPage"`
+	// When paginating forwards, are there more items?
+	HasNextPage bool `json:"hasNextPage"`
 }
 
 type Shop struct {
-	ID        int64      `json:"id"`
+	ID        string     `json:"id"`
 	ShopName  *string    `json:"shopName"`
 	CreatedAt *time.Time `json:"createdAt"`
 	UpdatedAt *time.Time `json:"updatedAt"`
 	Books     []*Book    `json:"books"`
 }
+
+func (Shop) IsNode() {}
 
 // The connection type for Shop.
 type ShopConnection struct {
@@ -93,6 +96,8 @@ type ShopConnection struct {
 	TotalCount int `json:"totalCount"`
 }
 
+func (ShopConnection) IsConnection() {}
+
 // An edge in a connection.
 type ShopEdge struct {
 	// A cursor for use in pagination.
@@ -100,6 +105,8 @@ type ShopEdge struct {
 	// The item at the end of the edge.
 	Node *Shop `json:"node"`
 }
+
+func (ShopEdge) IsEdge() {}
 
 // Ordering options for Shop.
 type ShopOrder struct {

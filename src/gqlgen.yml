@@ -45,9 +45,9 @@ autobind:
 models:
   ID:
     model:
-      - github.com/99designs/gqlgen/graphql.Int64
       - github.com/99designs/gqlgen/graphql.ID
       - github.com/99designs/gqlgen/graphql.Int
+      - github.com/99designs/gqlgen/graphql.Int64
       - github.com/99designs/gqlgen/graphql.Int32
   Int:
     model:
@@ -57,7 +57,12 @@ models:
   DateTime:
     model:
       - github.com/99designs/gqlgen/graphql.Time
+  Cursor:
+    model:
+      - github.com/99designs/gqlgen/graphql.ID
   Shop:
     fields:
       books:
         resolver: true
+      hoge:
+        fieldName: FullName

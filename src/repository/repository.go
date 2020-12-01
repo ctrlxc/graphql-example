@@ -9,6 +9,11 @@ type Repository struct {
 	db *sql.DB
 }
 
+type Order struct {
+	field     string
+	direction string
+}
+
 func New(dsn string) (*Repository, error) {
 	db, err := sql.Open("postgres", dsn)
 

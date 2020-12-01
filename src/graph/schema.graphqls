@@ -1,5 +1,5 @@
 type Query {
-  shop(id: ID!, input: PaginationInput): Shop!
+  shop(id: ID!): Shop!
 
   shops(
     """
@@ -10,12 +10,12 @@ type Query {
     """
     Returns the elements in the list that come after the specified cursor.
     """
-    after: String
+    after: Cursor
 
     """
     Returns the elements in the list that come before the specified cursor.
     """
-    before: String
+    before: Cursor
 
     """
     Returns the first _n_ elements from the list.
@@ -45,17 +45,17 @@ type Query {
     """
     Returns the elements in the list that come after the specified cursor.
     """
-    after: String
+    after: Cursor
 
     """
     Returns the elements in the list that come before the specified cursor.
     """
-    before: String
+    before: Cursor
 
     """
     Returns the first _n_ elements from the list.
     """
-    first: Int!
+    first: Int
 
     """
     Returns the last _n_ elements from the list.
@@ -72,22 +72,22 @@ type Query {
     """
     the elements id.
     """
-    shopId: ID!
+    id: ID!
 
     """
     Returns the elements in the list that come after the specified cursor.
     """
-    after: String
+    after: Cursor
 
     """
     Returns the elements in the list that come before the specified cursor.
     """
-    before: String
+    before: Cursor
 
     """
     Returns the first _n_ elements from the list.
     """
-    first: Int!
+    first: Int
 
     """
     Returns the last _n_ elements from the list.
@@ -101,7 +101,7 @@ type Query {
   ): BookConnection!
 }
 
-type Shop {
+type Shop implements Node {
   id: ID!
   shopName: String
   createdAt: DateTime
@@ -109,7 +109,7 @@ type Shop {
   books: [Book!]!
 }
 
-type Book {
+type Book implements Node {
   id: ID!
   bookTitle: String
   createdAt: DateTime
@@ -119,7 +119,7 @@ type Book {
 """
 The connection type for Shop.
 """
-type ShopConnection {
+type ShopConnection implements Connection {
   """
   A list of edges.
   """
@@ -144,26 +144,16 @@ type ShopConnection {
 """
 An edge in a connection.
 """
-type ShopEdge {
+type ShopEdge implements Edge {
   """
   A cursor for use in pagination.
   """
-  cursor: String!
+  cursor: Cursor!
 
   """
   The item at the end of the edge.
   """
-  node: Shop
-}
-
-"""
-Properties by which shop can be ordered.
-"""
-enum ShopOrderField {
-  ID
-  SHOP_NAME
-  CREATED_AT
-  UPDATE_AT
+  node: Shop!
 }
 
 """
@@ -182,9 +172,19 @@ input ShopOrder {
 }
 
 """
+Properties by which shop can be ordered.
+"""
+enum ShopOrderField {
+  ID
+  SHOP_NAME
+  CREATED_AT
+  UPDATE_AT
+}
+
+"""
 The connection type for Book.
 """
-type BookConnection {
+type BookConnection implements Connection {
   """
   A list of edges.
   """
@@ -210,16 +210,31 @@ type BookConnection {
 """
 An edge in a connection.
 """
-type BookEdge {
+type BookEdge implements Edge {
   """
   A cursor for use in pagination.
   """
-  cursor: String!
+  cursor: Cursor!
 
   """
   The item at the end of the edge.
   """
-  node: Book
+  node: Book!
+}
+
+"""
+Ordering options for Book.
+"""
+input BookOrder {
+  """
+  The field to order Book by.
+  """
+  field: BookOrderField
+
+  """
+  The ordering direction.
+  """
+  direction: OrderDirection
 }
 
 """
@@ -230,21 +245,6 @@ enum BookOrderField {
   BOOK_TITLE
   CREATED_AT
   UPDATE_AT
-}
-
-"""
-Ordering options for Book.
-"""
-input BookOrder {
-  """
-  The ordering direction.
-  """
-  direction: OrderDirection
-
-  """
-  The field to order Book by.
-  """
-  field: BookOrderField
 }
 
 """
@@ -262,20 +262,19 @@ enum OrderDirection {
   DESC
 }
 
-
 """
 Information about pagination in a connection.
 """
 type PageInfo {
   """
-  When paginating forwards, the cursor to continue.
+  When paginating backwards, the cursor to continue.
   """
-  endCursor: String
+  startCursor: Cursor
 
   """
-  When paginating forwards, are there more items?
+  When paginating forwards, the cursor to continue.
   """
-  hasNextPage: Boolean!
+  endCursor: Cursor
 
   """
   When paginating backwards, are there more items?
@@ -283,18 +282,20 @@ type PageInfo {
   hasPreviousPage: Boolean!
 
   """
-  When paginating backwards, the cursor to continue.
+  When paginating forwards, are there more items?
   """
-  startCursor: String
+  hasNextPage: Boolean!
 }
 
 interface Connection {
+  edges: [Edge]
+  nodes: [Node]
   pageInfo: PageInfo!
-  edges: [Edge]!
+  totalCount: Int!
 }
 
 interface Edge {
-  cursor: String!
+  cursor: Cursor!
   node: Node!
 }
 
@@ -302,9 +303,6 @@ interface Node {
   id: ID!
 }
 
-input PaginationInput {
-  first: Int
-  after: String
-}
-
 scalar DateTime
+scalar Cursor
+
