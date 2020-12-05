@@ -7,30 +7,19 @@ import (
 	generated1 "app/graph/generated"
 	model1 "app/graph/model"
 	"context"
+	"fmt"
 )
 
-func (r *queryResolver) Shop(ctx context.Context, id string) (*model1.Shop, error) {
-	return r.shop(ctx, id)
+func (r *queryResolver) Node(ctx context.Context, id string) (model1.Node, error) {
+	return r.node(ctx, id)
 }
 
-func (r *queryResolver) Shops(ctx context.Context, ids []string, after *string, before *string, first int, last *int, orderBy []*model1.ShopOrder) (*model1.ShopConnection, error) {
-	return r.shops(ctx, ids)
-}
-
-func (r *queryResolver) Book(ctx context.Context, id string) (*model1.Book, error) {
-	return r.book(ctx, id)
-}
-
-func (r *queryResolver) Books(ctx context.Context, ids []string, after *string, before *string, first *int, last *int, orderBy []*model1.BookOrder) (*model1.BookConnection, error) {
-	return r.books(ctx, ids)
-}
-
-func (r *queryResolver) BooksByShopID(ctx context.Context, id string, after *string, before *string, first *int, last *int, orderBy []*model1.BookOrder) (*model1.BookConnection, error) {
-	return r.booksByShopID(ctx, id)
+func (r *queryResolver) Nodes(ctx context.Context, ids []string) ([]model1.Node, error) {
+	return r.nodes(ctx, ids)
 }
 
 func (r *shopResolver) Books(ctx context.Context, obj *model1.Shop) ([]*model1.Book, error) {
-	return r.booksByShopID(ctx, obj.ID)
+	panic(fmt.Errorf("not implemented"))
 }
 
 // Query returns generated1.QueryResolver implementation.

@@ -13,7 +13,7 @@ CREATE TABLE shop (
 	updated_at timestamp NOT NULL
 );
 
-INSERT INTO shop (shop_name) VALUES
+INSERT INTO shop (shop_name, created_at, updated_at) VALUES
     ('shop-name-1', now(), now()),
     ('shop-name-2', now(), now());
 
@@ -24,7 +24,7 @@ CREATE TABLE book (
 	updated_at timestamp NOT NULL
 );
 
-INSERT INTO book (book_title) VALUES
+INSERT INTO book (book_title, created_at, updated_at) VALUES
     ('book-title-1', now(), now()),
     ('book-title-2', now(), now()),
     ('book-title-3', now(), now());
@@ -37,7 +37,7 @@ CREATE TABLE stock (
 	updated_at timestamp NOT NULL
 );
 
-INSERT INTO stock (shop_id, book_id) VALUES
+INSERT INTO stock (shop_id, book_id, created_at, updated_at) VALUES
     (1, 1, now(), now()),
     (1, 2, now(), now()),
     (2, 2, now(), now()),

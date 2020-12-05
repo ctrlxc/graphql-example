@@ -72,11 +72,8 @@ type ComplexityRoot struct {
 	}
 
 	Query struct {
-		Book          func(childComplexity int, id string) int
-		Books         func(childComplexity int, ids []string, after *string, before *string, first *int, last *int, orderBy []*model.BookOrder) int
-		BooksByShopID func(childComplexity int, id string, after *string, before *string, first *int, last *int, orderBy []*model.BookOrder) int
-		Shop          func(childComplexity int, id string) int
-		Shops         func(childComplexity int, ids []string, after *string, before *string, first int, last *int, orderBy []*model.ShopOrder) int
+		Node  func(childComplexity int, id string) int
+		Nodes func(childComplexity int, ids []string) int
 	}
 
 	Shop struct {
@@ -101,11 +98,8 @@ type ComplexityRoot struct {
 }
 
 type QueryResolver interface {
-	Shop(ctx context.Context, id string) (*model.Shop, error)
-	Shops(ctx context.Context, ids []string, after *string, before *string, first int, last *int, orderBy []*model.ShopOrder) (*model.ShopConnection, error)
-	Book(ctx context.Context, id string) (*model.Book, error)
-	Books(ctx context.Context, ids []string, after *string, before *string, first *int, last *int, orderBy []*model.BookOrder) (*model.BookConnection, error)
-	BooksByShopID(ctx context.Context, id string, after *string, before *string, first *int, last *int, orderBy []*model.BookOrder) (*model.BookConnection, error)
+	Node(ctx context.Context, id string) (model.Node, error)
+	Nodes(ctx context.Context, ids []string) ([]model.Node, error)
 }
 type ShopResolver interface {
 	Books(ctx context.Context, obj *model.Shop) ([]*model.Book, error)
@@ -224,65 +218,29 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.PageInfo.StartCursor(childComplexity), true
 
-	case "Query.book":
-		if e.complexity.Query.Book == nil {
+	case "Query.node":
+		if e.complexity.Query.Node == nil {
 			break
 		}
 
-		args, err := ec.field_Query_book_args(context.TODO(), rawArgs)
+		args, err := ec.field_Query_node_args(context.TODO(), rawArgs)
 		if err != nil {
 			return 0, false
 		}
 
-		return e.complexity.Query.Book(childComplexity, args["id"].(string)), true
+		return e.complexity.Query.Node(childComplexity, args["id"].(string)), true
 
-	case "Query.books":
-		if e.complexity.Query.Books == nil {
+	case "Query.nodes":
+		if e.complexity.Query.Nodes == nil {
 			break
 		}
 
-		args, err := ec.field_Query_books_args(context.TODO(), rawArgs)
+		args, err := ec.field_Query_nodes_args(context.TODO(), rawArgs)
 		if err != nil {
 			return 0, false
 		}
 
-		return e.complexity.Query.Books(childComplexity, args["ids"].([]string), args["after"].(*string), args["before"].(*string), args["first"].(*int), args["last"].(*int), args["orderBy"].([]*model.BookOrder)), true
-
-	case "Query.booksByShopId":
-		if e.complexity.Query.BooksByShopID == nil {
-			break
-		}
-
-		args, err := ec.field_Query_booksByShopId_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Query.BooksByShopID(childComplexity, args["id"].(string), args["after"].(*string), args["before"].(*string), args["first"].(*int), args["last"].(*int), args["orderBy"].([]*model.BookOrder)), true
-
-	case "Query.shop":
-		if e.complexity.Query.Shop == nil {
-			break
-		}
-
-		args, err := ec.field_Query_shop_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Query.Shop(childComplexity, args["id"].(string)), true
-
-	case "Query.shops":
-		if e.complexity.Query.Shops == nil {
-			break
-		}
-
-		args, err := ec.field_Query_shops_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Query.Shops(childComplexity, args["ids"].([]string), args["after"].(*string), args["before"].(*string), args["first"].(int), args["last"].(*int), args["orderBy"].([]*model.ShopOrder)), true
+		return e.complexity.Query.Nodes(childComplexity, args["ids"].([]string)), true
 
 	case "Shop.books":
 		if e.complexity.Shop.Books == nil {
@@ -412,106 +370,35 @@ func (ec *executionContext) introspectType(name string) (*introspection.Type, er
 
 var sources = []*ast.Source{
 	{Name: "graph/schema.graphqls", Input: `type Query {
-  shop(id: ID!): Shop!
+  node(id: ID!): Node!
+  nodes(ids: [ID!]): [Node!]!
 
-  shops(
-    """
-    the elements id.
-    """
-    ids: [ID!]
+  # shops(
+  #   after: Cursor
+  #   before: Cursor
+  #   first: Int!
+  #   last: Int
+  #   query: String!
+  #   orderBy: [ShopOrder!] = [{field: CREATED_AT, direction: DESC}]
+  # ): ShopConnection!
 
-    """
-    Returns the elements in the list that come after the specified cursor.
-    """
-    after: Cursor
+  # books(
+  #   after: Cursor
+  #   before: Cursor
+  #   first: Int!
+  #   last: Int
+  #   query: String!
+  #   orderBy: [BookOrder!] = [{field: CREATED_AT, direction: DESC}]
+  # ): BookConnection!
 
-    """
-    Returns the elements in the list that come before the specified cursor.
-    """
-    before: Cursor
-
-    """
-    Returns the first _n_ elements from the list.
-    """
-    first: Int!
-
-    """
-    Returns the last _n_ elements from the list.
-    """
-    last: Int
-
-    """
-    Ordering options for the returned shop entries.
-    """
-    orderBy: [ShopOrder!] = [{field: CREATED_AT, direction: DESC}]
-  ): ShopConnection!
-
-  book(id: ID!): Book!
-
-  books(
-
-    """
-    the elements id.
-    """
-    ids: [ID!]
-
-    """
-    Returns the elements in the list that come after the specified cursor.
-    """
-    after: Cursor
-
-    """
-    Returns the elements in the list that come before the specified cursor.
-    """
-    before: Cursor
-
-    """
-    Returns the first _n_ elements from the list.
-    """
-    first: Int
-
-    """
-    Returns the last _n_ elements from the list.
-    """
-    last: Int
-
-    """
-    Ordering options for the returned shop entries.
-    """
-    orderBy: [BookOrder!] = [{field: CREATED_AT, direction: DESC}]
-  ): BookConnection!
-
-  booksByShopId(
-    """
-    the elements id.
-    """
-    id: ID!
-
-    """
-    Returns the elements in the list that come after the specified cursor.
-    """
-    after: Cursor
-
-    """
-    Returns the elements in the list that come before the specified cursor.
-    """
-    before: Cursor
-
-    """
-    Returns the first _n_ elements from the list.
-    """
-    first: Int
-
-    """
-    Returns the last _n_ elements from the list.
-    """
-    last: Int
-
-    """
-    Ordering options for the returned shop entries.
-    """
-    orderBy: [BookOrder!] = [{field: CREATED_AT, direction: DESC}]
-  ): BookConnection!
+  # booksByShopId(
+  #   after: Cursor
+  #   before: Cursor
+  #   first: Int
+  #   last: Int
+  #   id: ID!
+  #   orderBy: [BookOrder!] = [{field: CREATED_AT, direction: DESC}]
+  # ): BookConnection!
 }
 
 type Shop implements Node {
@@ -522,71 +409,23 @@ type Shop implements Node {
   books: [Book!]!
 }
 
-type Book implements Node {
-  id: ID!
-  bookTitle: String
-  createdAt: DateTime
-  updatedAt: DateTime
-}
-
-"""
-The connection type for Shop.
-"""
 type ShopConnection implements Connection {
-  """
-  A list of edges.
-  """
   edges: [ShopEdge]
-
-  """
-  A list of nodes.
-  """
   nodes: [Shop]
-
-  """
-  Information to aid in pagination.
-  """
   pageInfo: PageInfo!
-
-  """
-  Identifies the total count of items in the connection.
-  """
   totalCount: Int!
 }
 
-"""
-An edge in a connection.
-"""
 type ShopEdge implements Edge {
-  """
-  A cursor for use in pagination.
-  """
   cursor: Cursor!
-
-  """
-  The item at the end of the edge.
-  """
   node: Shop!
 }
 
-"""
-Ordering options for Shop.
-"""
 input ShopOrder {
-  """
-  The field to order Shop by.
-  """
   field: ShopOrderField
-
-  """
-  The ordering direction.
-  """
   direction: OrderDirection
 }
 
-"""
-Properties by which shop can be ordered.
-"""
 enum ShopOrderField {
   ID
   SHOP_NAME
@@ -594,65 +433,30 @@ enum ShopOrderField {
   UPDATE_AT
 }
 
-"""
-The connection type for Book.
-"""
+type Book implements Node {
+  id: ID!
+  bookTitle: String
+  createdAt: DateTime
+  updatedAt: DateTime
+}
+
 type BookConnection implements Connection {
-  """
-  A list of edges.
-  """
   edges: [BookEdge]
-
-  """
-  A list of nodes.
-  """
   nodes: [Book]
-
-  """
-  Information to aid in pagination.
-  """
   pageInfo: PageInfo!
-
-  """
-  Identifies the total count of items in the connection.
-  """
   totalCount: Int!
 }
 
-
-"""
-An edge in a connection.
-"""
 type BookEdge implements Edge {
-  """
-  A cursor for use in pagination.
-  """
   cursor: Cursor!
-
-  """
-  The item at the end of the edge.
-  """
   node: Book!
 }
 
-"""
-Ordering options for Book.
-"""
 input BookOrder {
-  """
-  The field to order Book by.
-  """
   field: BookOrderField
-
-  """
-  The ordering direction.
-  """
   direction: OrderDirection
 }
 
-"""
-Properties by which book can be ordered.
-"""
 enum BookOrderField {
   ID
   BOOK_TITLE
@@ -660,43 +464,15 @@ enum BookOrderField {
   UPDATE_AT
 }
 
-"""
-Possible directions in which to order a list of items when provided an ` + "`" + `orderBy` + "`" + ` argument.
-"""
 enum OrderDirection {
-  """
-  Specifies an ascending order for a given ` + "`" + `orderBy` + "`" + ` argument.
-  """
   ASC
-
-  """
-  Specifies a descending order for a given ` + "`" + `orderBy` + "`" + ` argument.
-  """
   DESC
 }
 
-"""
-Information about pagination in a connection.
-"""
 type PageInfo {
-  """
-  When paginating backwards, the cursor to continue.
-  """
   startCursor: Cursor
-
-  """
-  When paginating forwards, the cursor to continue.
-  """
   endCursor: Cursor
-
-  """
-  When paginating backwards, are there more items?
-  """
   hasPreviousPage: Boolean!
-
-  """
-  When paginating forwards, are there more items?
-  """
   hasNextPage: Boolean!
 }
 
@@ -742,7 +518,7 @@ func (ec *executionContext) field_Query___type_args(ctx context.Context, rawArgs
 	return args, nil
 }
 
-func (ec *executionContext) field_Query_book_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+func (ec *executionContext) field_Query_node_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
 	var arg0 string
@@ -757,67 +533,7 @@ func (ec *executionContext) field_Query_book_args(ctx context.Context, rawArgs m
 	return args, nil
 }
 
-func (ec *executionContext) field_Query_booksByShopId_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	var err error
-	args := map[string]interface{}{}
-	var arg0 string
-	if tmp, ok := rawArgs["id"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
-		arg0, err = ec.unmarshalNID2string(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["id"] = arg0
-	var arg1 *string
-	if tmp, ok := rawArgs["after"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("after"))
-		arg1, err = ec.unmarshalOCursor2ᚖstring(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["after"] = arg1
-	var arg2 *string
-	if tmp, ok := rawArgs["before"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("before"))
-		arg2, err = ec.unmarshalOCursor2ᚖstring(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["before"] = arg2
-	var arg3 *int
-	if tmp, ok := rawArgs["first"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("first"))
-		arg3, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["first"] = arg3
-	var arg4 *int
-	if tmp, ok := rawArgs["last"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("last"))
-		arg4, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["last"] = arg4
-	var arg5 []*model.BookOrder
-	if tmp, ok := rawArgs["orderBy"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("orderBy"))
-		arg5, err = ec.unmarshalOBookOrder2ᚕᚖappᚋgraphᚋmodelᚐBookOrderᚄ(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["orderBy"] = arg5
-	return args, nil
-}
-
-func (ec *executionContext) field_Query_books_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+func (ec *executionContext) field_Query_nodes_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
 	var arg0 []string
@@ -829,126 +545,6 @@ func (ec *executionContext) field_Query_books_args(ctx context.Context, rawArgs 
 		}
 	}
 	args["ids"] = arg0
-	var arg1 *string
-	if tmp, ok := rawArgs["after"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("after"))
-		arg1, err = ec.unmarshalOCursor2ᚖstring(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["after"] = arg1
-	var arg2 *string
-	if tmp, ok := rawArgs["before"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("before"))
-		arg2, err = ec.unmarshalOCursor2ᚖstring(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["before"] = arg2
-	var arg3 *int
-	if tmp, ok := rawArgs["first"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("first"))
-		arg3, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["first"] = arg3
-	var arg4 *int
-	if tmp, ok := rawArgs["last"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("last"))
-		arg4, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["last"] = arg4
-	var arg5 []*model.BookOrder
-	if tmp, ok := rawArgs["orderBy"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("orderBy"))
-		arg5, err = ec.unmarshalOBookOrder2ᚕᚖappᚋgraphᚋmodelᚐBookOrderᚄ(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["orderBy"] = arg5
-	return args, nil
-}
-
-func (ec *executionContext) field_Query_shop_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	var err error
-	args := map[string]interface{}{}
-	var arg0 string
-	if tmp, ok := rawArgs["id"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
-		arg0, err = ec.unmarshalNID2string(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["id"] = arg0
-	return args, nil
-}
-
-func (ec *executionContext) field_Query_shops_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	var err error
-	args := map[string]interface{}{}
-	var arg0 []string
-	if tmp, ok := rawArgs["ids"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("ids"))
-		arg0, err = ec.unmarshalOID2ᚕstringᚄ(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["ids"] = arg0
-	var arg1 *string
-	if tmp, ok := rawArgs["after"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("after"))
-		arg1, err = ec.unmarshalOCursor2ᚖstring(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["after"] = arg1
-	var arg2 *string
-	if tmp, ok := rawArgs["before"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("before"))
-		arg2, err = ec.unmarshalOCursor2ᚖstring(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["before"] = arg2
-	var arg3 int
-	if tmp, ok := rawArgs["first"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("first"))
-		arg3, err = ec.unmarshalNInt2int(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["first"] = arg3
-	var arg4 *int
-	if tmp, ok := rawArgs["last"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("last"))
-		arg4, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["last"] = arg4
-	var arg5 []*model.ShopOrder
-	if tmp, ok := rawArgs["orderBy"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("orderBy"))
-		arg5, err = ec.unmarshalOShopOrder2ᚕᚖappᚋgraphᚋmodelᚐShopOrderᚄ(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["orderBy"] = arg5
 	return args, nil
 }
 
@@ -1459,7 +1055,7 @@ func (ec *executionContext) _PageInfo_hasNextPage(ctx context.Context, field gra
 	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Query_shop(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+func (ec *executionContext) _Query_node(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -1476,7 +1072,7 @@ func (ec *executionContext) _Query_shop(ctx context.Context, field graphql.Colle
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Query_shop_args(ctx, rawArgs)
+	args, err := ec.field_Query_node_args(ctx, rawArgs)
 	if err != nil {
 		ec.Error(ctx, err)
 		return graphql.Null
@@ -1484,7 +1080,7 @@ func (ec *executionContext) _Query_shop(ctx context.Context, field graphql.Colle
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().Shop(rctx, args["id"].(string))
+		return ec.resolvers.Query().Node(rctx, args["id"].(string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -1496,12 +1092,12 @@ func (ec *executionContext) _Query_shop(ctx context.Context, field graphql.Colle
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*model.Shop)
+	res := resTmp.(model.Node)
 	fc.Result = res
-	return ec.marshalNShop2ᚖappᚋgraphᚋmodelᚐShop(ctx, field.Selections, res)
+	return ec.marshalNNode2appᚋgraphᚋmodelᚐNode(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Query_shops(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+func (ec *executionContext) _Query_nodes(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -1518,7 +1114,7 @@ func (ec *executionContext) _Query_shops(ctx context.Context, field graphql.Coll
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Query_shops_args(ctx, rawArgs)
+	args, err := ec.field_Query_nodes_args(ctx, rawArgs)
 	if err != nil {
 		ec.Error(ctx, err)
 		return graphql.Null
@@ -1526,7 +1122,7 @@ func (ec *executionContext) _Query_shops(ctx context.Context, field graphql.Coll
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().Shops(rctx, args["ids"].([]string), args["after"].(*string), args["before"].(*string), args["first"].(int), args["last"].(*int), args["orderBy"].([]*model.ShopOrder))
+		return ec.resolvers.Query().Nodes(rctx, args["ids"].([]string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -1538,135 +1134,9 @@ func (ec *executionContext) _Query_shops(ctx context.Context, field graphql.Coll
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*model.ShopConnection)
+	res := resTmp.([]model.Node)
 	fc.Result = res
-	return ec.marshalNShopConnection2ᚖappᚋgraphᚋmodelᚐShopConnection(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Query_book(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:     "Query",
-		Field:      field,
-		Args:       nil,
-		IsMethod:   true,
-		IsResolver: true,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Query_book_args(ctx, rawArgs)
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	fc.Args = args
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().Book(rctx, args["id"].(string))
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(*model.Book)
-	fc.Result = res
-	return ec.marshalNBook2ᚖappᚋgraphᚋmodelᚐBook(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Query_books(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:     "Query",
-		Field:      field,
-		Args:       nil,
-		IsMethod:   true,
-		IsResolver: true,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Query_books_args(ctx, rawArgs)
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	fc.Args = args
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().Books(rctx, args["ids"].([]string), args["after"].(*string), args["before"].(*string), args["first"].(*int), args["last"].(*int), args["orderBy"].([]*model.BookOrder))
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(*model.BookConnection)
-	fc.Result = res
-	return ec.marshalNBookConnection2ᚖappᚋgraphᚋmodelᚐBookConnection(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Query_booksByShopId(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:     "Query",
-		Field:      field,
-		Args:       nil,
-		IsMethod:   true,
-		IsResolver: true,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Query_booksByShopId_args(ctx, rawArgs)
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	fc.Args = args
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().BooksByShopID(rctx, args["id"].(string), args["after"].(*string), args["before"].(*string), args["first"].(*int), args["last"].(*int), args["orderBy"].([]*model.BookOrder))
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(*model.BookConnection)
-	fc.Result = res
-	return ec.marshalNBookConnection2ᚖappᚋgraphᚋmodelᚐBookConnection(ctx, field.Selections, res)
+	return ec.marshalNNode2ᚕappᚋgraphᚋmodelᚐNodeᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query___type(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -3482,7 +2952,7 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("Query")
-		case "shop":
+		case "node":
 			field := field
 			out.Concurrently(i, func() (res graphql.Marshaler) {
 				defer func() {
@@ -3490,13 +2960,13 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
-				res = ec._Query_shop(ctx, field)
+				res = ec._Query_node(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&invalids, 1)
 				}
 				return res
 			})
-		case "shops":
+		case "nodes":
 			field := field
 			out.Concurrently(i, func() (res graphql.Marshaler) {
 				defer func() {
@@ -3504,49 +2974,7 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
-				res = ec._Query_shops(ctx, field)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
-				return res
-			})
-		case "book":
-			field := field
-			out.Concurrently(i, func() (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Query_book(ctx, field)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
-				return res
-			})
-		case "books":
-			field := field
-			out.Concurrently(i, func() (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Query_books(ctx, field)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
-				return res
-			})
-		case "booksByShopId":
-			field := field
-			out.Concurrently(i, func() (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Query_booksByShopId(ctx, field)
+				res = ec._Query_nodes(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&invalids, 1)
 				}
@@ -3927,10 +3355,6 @@ func (ec *executionContext) ___Type(ctx context.Context, sel ast.SelectionSet, o
 
 // region    ***************************** type.gotpl *****************************
 
-func (ec *executionContext) marshalNBook2appᚋgraphᚋmodelᚐBook(ctx context.Context, sel ast.SelectionSet, v model.Book) graphql.Marshaler {
-	return ec._Book(ctx, sel, &v)
-}
-
 func (ec *executionContext) marshalNBook2ᚕᚖappᚋgraphᚋmodelᚐBookᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.Book) graphql.Marshaler {
 	ret := make(graphql.Array, len(v))
 	var wg sync.WaitGroup
@@ -3976,25 +3400,6 @@ func (ec *executionContext) marshalNBook2ᚖappᚋgraphᚋmodelᚐBook(ctx conte
 		return graphql.Null
 	}
 	return ec._Book(ctx, sel, v)
-}
-
-func (ec *executionContext) marshalNBookConnection2appᚋgraphᚋmodelᚐBookConnection(ctx context.Context, sel ast.SelectionSet, v model.BookConnection) graphql.Marshaler {
-	return ec._BookConnection(ctx, sel, &v)
-}
-
-func (ec *executionContext) marshalNBookConnection2ᚖappᚋgraphᚋmodelᚐBookConnection(ctx context.Context, sel ast.SelectionSet, v *model.BookConnection) graphql.Marshaler {
-	if v == nil {
-		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	return ec._BookConnection(ctx, sel, v)
-}
-
-func (ec *executionContext) unmarshalNBookOrder2ᚖappᚋgraphᚋmodelᚐBookOrder(ctx context.Context, v interface{}) (*model.BookOrder, error) {
-	res, err := ec.unmarshalInputBookOrder(ctx, v)
-	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) unmarshalNBoolean2bool(ctx context.Context, v interface{}) (bool, error) {
@@ -4057,6 +3462,53 @@ func (ec *executionContext) marshalNInt2int(ctx context.Context, sel ast.Selecti
 	return res
 }
 
+func (ec *executionContext) marshalNNode2appᚋgraphᚋmodelᚐNode(ctx context.Context, sel ast.SelectionSet, v model.Node) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._Node(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNNode2ᚕappᚋgraphᚋmodelᚐNodeᚄ(ctx context.Context, sel ast.SelectionSet, v []model.Node) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNNode2appᚋgraphᚋmodelᚐNode(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+	return ret
+}
+
 func (ec *executionContext) marshalNPageInfo2ᚖappᚋgraphᚋmodelᚐPageInfo(ctx context.Context, sel ast.SelectionSet, v *model.PageInfo) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
@@ -4067,10 +3519,6 @@ func (ec *executionContext) marshalNPageInfo2ᚖappᚋgraphᚋmodelᚐPageInfo(c
 	return ec._PageInfo(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNShop2appᚋgraphᚋmodelᚐShop(ctx context.Context, sel ast.SelectionSet, v model.Shop) graphql.Marshaler {
-	return ec._Shop(ctx, sel, &v)
-}
-
 func (ec *executionContext) marshalNShop2ᚖappᚋgraphᚋmodelᚐShop(ctx context.Context, sel ast.SelectionSet, v *model.Shop) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
@@ -4079,25 +3527,6 @@ func (ec *executionContext) marshalNShop2ᚖappᚋgraphᚋmodelᚐShop(ctx conte
 		return graphql.Null
 	}
 	return ec._Shop(ctx, sel, v)
-}
-
-func (ec *executionContext) marshalNShopConnection2appᚋgraphᚋmodelᚐShopConnection(ctx context.Context, sel ast.SelectionSet, v model.ShopConnection) graphql.Marshaler {
-	return ec._ShopConnection(ctx, sel, &v)
-}
-
-func (ec *executionContext) marshalNShopConnection2ᚖappᚋgraphᚋmodelᚐShopConnection(ctx context.Context, sel ast.SelectionSet, v *model.ShopConnection) graphql.Marshaler {
-	if v == nil {
-		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	return ec._ShopConnection(ctx, sel, v)
-}
-
-func (ec *executionContext) unmarshalNShopOrder2ᚖappᚋgraphᚋmodelᚐShopOrder(ctx context.Context, v interface{}) (*model.ShopOrder, error) {
-	res, err := ec.unmarshalInputShopOrder(ctx, v)
-	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) unmarshalNString2string(ctx context.Context, v interface{}) (string, error) {
@@ -4438,30 +3867,6 @@ func (ec *executionContext) marshalOBookEdge2ᚖappᚋgraphᚋmodelᚐBookEdge(c
 	return ec._BookEdge(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalOBookOrder2ᚕᚖappᚋgraphᚋmodelᚐBookOrderᚄ(ctx context.Context, v interface{}) ([]*model.BookOrder, error) {
-	if v == nil {
-		return nil, nil
-	}
-	var vSlice []interface{}
-	if v != nil {
-		if tmp1, ok := v.([]interface{}); ok {
-			vSlice = tmp1
-		} else {
-			vSlice = []interface{}{v}
-		}
-	}
-	var err error
-	res := make([]*model.BookOrder, len(vSlice))
-	for i := range vSlice {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
-		res[i], err = ec.unmarshalNBookOrder2ᚖappᚋgraphᚋmodelᚐBookOrder(ctx, vSlice[i])
-		if err != nil {
-			return nil, err
-		}
-	}
-	return res, nil
-}
-
 func (ec *executionContext) unmarshalOBookOrderField2ᚖappᚋgraphᚋmodelᚐBookOrderField(ctx context.Context, v interface{}) (*model.BookOrderField, error) {
 	if v == nil {
 		return nil, nil
@@ -4566,21 +3971,6 @@ func (ec *executionContext) marshalOID2ᚕstringᚄ(ctx context.Context, sel ast
 	}
 
 	return ret
-}
-
-func (ec *executionContext) unmarshalOInt2ᚖint(ctx context.Context, v interface{}) (*int, error) {
-	if v == nil {
-		return nil, nil
-	}
-	res, err := graphql.UnmarshalInt(v)
-	return &res, graphql.ErrorOnPath(ctx, err)
-}
-
-func (ec *executionContext) marshalOInt2ᚖint(ctx context.Context, sel ast.SelectionSet, v *int) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	return graphql.MarshalInt(*v)
 }
 
 func (ec *executionContext) unmarshalOOrderDirection2ᚖappᚋgraphᚋmodelᚐOrderDirection(ctx context.Context, v interface{}) (*model.OrderDirection, error) {
@@ -4691,30 +4081,6 @@ func (ec *executionContext) marshalOShopEdge2ᚖappᚋgraphᚋmodelᚐShopEdge(c
 		return graphql.Null
 	}
 	return ec._ShopEdge(ctx, sel, v)
-}
-
-func (ec *executionContext) unmarshalOShopOrder2ᚕᚖappᚋgraphᚋmodelᚐShopOrderᚄ(ctx context.Context, v interface{}) ([]*model.ShopOrder, error) {
-	if v == nil {
-		return nil, nil
-	}
-	var vSlice []interface{}
-	if v != nil {
-		if tmp1, ok := v.([]interface{}); ok {
-			vSlice = tmp1
-		} else {
-			vSlice = []interface{}{v}
-		}
-	}
-	var err error
-	res := make([]*model.ShopOrder, len(vSlice))
-	for i := range vSlice {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
-		res[i], err = ec.unmarshalNShopOrder2ᚖappᚋgraphᚋmodelᚐShopOrder(ctx, vSlice[i])
-		if err != nil {
-			return nil, err
-		}
-	}
-	return res, nil
 }
 
 func (ec *executionContext) unmarshalOShopOrderField2ᚖappᚋgraphᚋmodelᚐShopOrderField(ctx context.Context, v interface{}) (*model.ShopOrderField, error) {

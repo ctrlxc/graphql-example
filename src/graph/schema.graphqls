@@ -1,104 +1,33 @@
 type Query {
-  shop(id: ID!): Shop!
+  node(id: ID!): Node!
+  nodes(ids: [ID!]): [Node!]!
 
-  shops(
-    """
-    the elements id.
-    """
-    ids: [ID!]
+  # shops(
+  #   after: Cursor
+  #   before: Cursor
+  #   first: Int!
+  #   last: Int
+  #   query: String!
+  #   orderBy: [ShopOrder!] = [{field: CREATED_AT, direction: DESC}]
+  # ): ShopConnection!
 
-    """
-    Returns the elements in the list that come after the specified cursor.
-    """
-    after: Cursor
+  # books(
+  #   after: Cursor
+  #   before: Cursor
+  #   first: Int!
+  #   last: Int
+  #   query: String!
+  #   orderBy: [BookOrder!] = [{field: CREATED_AT, direction: DESC}]
+  # ): BookConnection!
 
-    """
-    Returns the elements in the list that come before the specified cursor.
-    """
-    before: Cursor
-
-    """
-    Returns the first _n_ elements from the list.
-    """
-    first: Int!
-
-    """
-    Returns the last _n_ elements from the list.
-    """
-    last: Int
-
-    """
-    Ordering options for the returned shop entries.
-    """
-    orderBy: [ShopOrder!] = [{field: CREATED_AT, direction: DESC}]
-  ): ShopConnection!
-
-  book(id: ID!): Book!
-
-  books(
-
-    """
-    the elements id.
-    """
-    ids: [ID!]
-
-    """
-    Returns the elements in the list that come after the specified cursor.
-    """
-    after: Cursor
-
-    """
-    Returns the elements in the list that come before the specified cursor.
-    """
-    before: Cursor
-
-    """
-    Returns the first _n_ elements from the list.
-    """
-    first: Int
-
-    """
-    Returns the last _n_ elements from the list.
-    """
-    last: Int
-
-    """
-    Ordering options for the returned shop entries.
-    """
-    orderBy: [BookOrder!] = [{field: CREATED_AT, direction: DESC}]
-  ): BookConnection!
-
-  booksByShopId(
-    """
-    the elements id.
-    """
-    id: ID!
-
-    """
-    Returns the elements in the list that come after the specified cursor.
-    """
-    after: Cursor
-
-    """
-    Returns the elements in the list that come before the specified cursor.
-    """
-    before: Cursor
-
-    """
-    Returns the first _n_ elements from the list.
-    """
-    first: Int
-
-    """
-    Returns the last _n_ elements from the list.
-    """
-    last: Int
-
-    """
-    Ordering options for the returned shop entries.
-    """
-    orderBy: [BookOrder!] = [{field: CREATED_AT, direction: DESC}]
-  ): BookConnection!
+  # booksByShopId(
+  #   after: Cursor
+  #   before: Cursor
+  #   first: Int
+  #   last: Int
+  #   id: ID!
+  #   orderBy: [BookOrder!] = [{field: CREATED_AT, direction: DESC}]
+  # ): BookConnection!
 }
 
 type Shop implements Node {
@@ -109,71 +38,23 @@ type Shop implements Node {
   books: [Book!]!
 }
 
-type Book implements Node {
-  id: ID!
-  bookTitle: String
-  createdAt: DateTime
-  updatedAt: DateTime
-}
-
-"""
-The connection type for Shop.
-"""
 type ShopConnection implements Connection {
-  """
-  A list of edges.
-  """
   edges: [ShopEdge]
-
-  """
-  A list of nodes.
-  """
   nodes: [Shop]
-
-  """
-  Information to aid in pagination.
-  """
   pageInfo: PageInfo!
-
-  """
-  Identifies the total count of items in the connection.
-  """
   totalCount: Int!
 }
 
-"""
-An edge in a connection.
-"""
 type ShopEdge implements Edge {
-  """
-  A cursor for use in pagination.
-  """
   cursor: Cursor!
-
-  """
-  The item at the end of the edge.
-  """
   node: Shop!
 }
 
-"""
-Ordering options for Shop.
-"""
 input ShopOrder {
-  """
-  The field to order Shop by.
-  """
   field: ShopOrderField
-
-  """
-  The ordering direction.
-  """
   direction: OrderDirection
 }
 
-"""
-Properties by which shop can be ordered.
-"""
 enum ShopOrderField {
   ID
   SHOP_NAME
@@ -181,65 +62,30 @@ enum ShopOrderField {
   UPDATE_AT
 }
 
-"""
-The connection type for Book.
-"""
+type Book implements Node {
+  id: ID!
+  bookTitle: String
+  createdAt: DateTime
+  updatedAt: DateTime
+}
+
 type BookConnection implements Connection {
-  """
-  A list of edges.
-  """
   edges: [BookEdge]
-
-  """
-  A list of nodes.
-  """
   nodes: [Book]
-
-  """
-  Information to aid in pagination.
-  """
   pageInfo: PageInfo!
-
-  """
-  Identifies the total count of items in the connection.
-  """
   totalCount: Int!
 }
 
-
-"""
-An edge in a connection.
-"""
 type BookEdge implements Edge {
-  """
-  A cursor for use in pagination.
-  """
   cursor: Cursor!
-
-  """
-  The item at the end of the edge.
-  """
   node: Book!
 }
 
-"""
-Ordering options for Book.
-"""
 input BookOrder {
-  """
-  The field to order Book by.
-  """
   field: BookOrderField
-
-  """
-  The ordering direction.
-  """
   direction: OrderDirection
 }
 
-"""
-Properties by which book can be ordered.
-"""
 enum BookOrderField {
   ID
   BOOK_TITLE
@@ -247,43 +93,15 @@ enum BookOrderField {
   UPDATE_AT
 }
 
-"""
-Possible directions in which to order a list of items when provided an `orderBy` argument.
-"""
 enum OrderDirection {
-  """
-  Specifies an ascending order for a given `orderBy` argument.
-  """
   ASC
-
-  """
-  Specifies a descending order for a given `orderBy` argument.
-  """
   DESC
 }
 
-"""
-Information about pagination in a connection.
-"""
 type PageInfo {
-  """
-  When paginating backwards, the cursor to continue.
-  """
   startCursor: Cursor
-
-  """
-  When paginating forwards, the cursor to continue.
-  """
   endCursor: Cursor
-
-  """
-  When paginating backwards, are there more items?
-  """
   hasPreviousPage: Boolean!
-
-  """
-  When paginating forwards, are there more items?
-  """
   hasNextPage: Boolean!
 }
 

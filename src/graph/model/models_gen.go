@@ -30,48 +30,32 @@ type Book struct {
 
 func (Book) IsNode() {}
 
-// The connection type for Book.
 type BookConnection struct {
-	// A list of edges.
-	Edges []*BookEdge `json:"edges"`
-	// A list of nodes.
-	Nodes []*Book `json:"nodes"`
-	// Information to aid in pagination.
-	PageInfo *PageInfo `json:"pageInfo"`
-	// Identifies the total count of items in the connection.
-	TotalCount int `json:"totalCount"`
+	Edges      []*BookEdge `json:"edges"`
+	Nodes      []*Book     `json:"nodes"`
+	PageInfo   *PageInfo   `json:"pageInfo"`
+	TotalCount int         `json:"totalCount"`
 }
 
 func (BookConnection) IsConnection() {}
 
-// An edge in a connection.
 type BookEdge struct {
-	// A cursor for use in pagination.
 	Cursor string `json:"cursor"`
-	// The item at the end of the edge.
-	Node *Book `json:"node"`
+	Node   *Book  `json:"node"`
 }
 
 func (BookEdge) IsEdge() {}
 
-// Ordering options for Book.
 type BookOrder struct {
-	// The field to order Book by.
-	Field *BookOrderField `json:"field"`
-	// The ordering direction.
+	Field     *BookOrderField `json:"field"`
 	Direction *OrderDirection `json:"direction"`
 }
 
-// Information about pagination in a connection.
 type PageInfo struct {
-	// When paginating backwards, the cursor to continue.
-	StartCursor *string `json:"startCursor"`
-	// When paginating forwards, the cursor to continue.
-	EndCursor *string `json:"endCursor"`
-	// When paginating backwards, are there more items?
-	HasPreviousPage bool `json:"hasPreviousPage"`
-	// When paginating forwards, are there more items?
-	HasNextPage bool `json:"hasNextPage"`
+	StartCursor     *string `json:"startCursor"`
+	EndCursor       *string `json:"endCursor"`
+	HasPreviousPage bool    `json:"hasPreviousPage"`
+	HasNextPage     bool    `json:"hasNextPage"`
 }
 
 type Shop struct {
@@ -84,39 +68,27 @@ type Shop struct {
 
 func (Shop) IsNode() {}
 
-// The connection type for Shop.
 type ShopConnection struct {
-	// A list of edges.
-	Edges []*ShopEdge `json:"edges"`
-	// A list of nodes.
-	Nodes []*Shop `json:"nodes"`
-	// Information to aid in pagination.
-	PageInfo *PageInfo `json:"pageInfo"`
-	// Identifies the total count of items in the connection.
-	TotalCount int `json:"totalCount"`
+	Edges      []*ShopEdge `json:"edges"`
+	Nodes      []*Shop     `json:"nodes"`
+	PageInfo   *PageInfo   `json:"pageInfo"`
+	TotalCount int         `json:"totalCount"`
 }
 
 func (ShopConnection) IsConnection() {}
 
-// An edge in a connection.
 type ShopEdge struct {
-	// A cursor for use in pagination.
 	Cursor string `json:"cursor"`
-	// The item at the end of the edge.
-	Node *Shop `json:"node"`
+	Node   *Shop  `json:"node"`
 }
 
 func (ShopEdge) IsEdge() {}
 
-// Ordering options for Shop.
 type ShopOrder struct {
-	// The field to order Shop by.
-	Field *ShopOrderField `json:"field"`
-	// The ordering direction.
+	Field     *ShopOrderField `json:"field"`
 	Direction *OrderDirection `json:"direction"`
 }
 
-// Properties by which book can be ordered.
 type BookOrderField string
 
 const (
@@ -162,13 +134,10 @@ func (e BookOrderField) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
-// Possible directions in which to order a list of items when provided an `orderBy` argument.
 type OrderDirection string
 
 const (
-	// Specifies an ascending order for a given `orderBy` argument.
-	OrderDirectionAsc OrderDirection = "ASC"
-	// Specifies a descending order for a given `orderBy` argument.
+	OrderDirectionAsc  OrderDirection = "ASC"
 	OrderDirectionDesc OrderDirection = "DESC"
 )
 
@@ -206,7 +175,6 @@ func (e OrderDirection) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
-// Properties by which shop can be ordered.
 type ShopOrderField string
 
 const (

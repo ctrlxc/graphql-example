@@ -7,58 +7,73 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
-
-	"github.com/jinzhu/gorm"
 )
 
-type direction string
+type Page struct {
+	After  *string
+	Before *string
+	First  *int
+	Last   *int
+}
 
-var (
-	asc  direction = "asc"
-	desc direction = "desc"
-)
+type Cursor struct {
+	Field     string `json:"field"`
+	Direction string `json:"direction"`
+	Value     string `json:"value"`
+}
 
-func pageDB(db *gorm.DB, col string, dir direction, page model.PaginationInput) (*gorm.DB, error) {
-	var limit int
-	if page.First == nil {
-		limit = 11
-	} else {
-		limit = *page.First + 1
-	}
+type Order struct {
+	Field     string
+	Direction string
+}
 
+func page(page Page, orders []*Order) () {
+	var limit := 10
+	
 	if page.After != nil {
-		resource1, resource2, err := decodeCursor(*page.After)
+		cursors, err := decodeCursor(*page.After)
+		
 		if err != nil {
 			return db, err
 		}
 
-		if resource2 != nil {
-			switch dir {
-			case asc:
-				db = db.Where(
-					fmt.Sprintf("(%s > ?) OR (%s = ? AND id > ?)", col, col),
-					resource1.ID,
-					resource1.ID, resource2.ID,
-				)
-			case desc:
-				db = db.Where(
-					fmt.Sprintf("(%s < ?) OR (%s = ? AND id < ?)", col, col),
-					resource1.ID,
-					resource1.ID, resource2.ID,
-				)
+		wheres := make([]interface{}, len(cursors))
+			
+		for i, c := range cursors {
+			var ope string
+			
+			switch c.Direction {
+				case "ASC"
+				  ope = ">"
+				case "DESC"
+				  ope = "<"
 			}
-		} else {
-			switch dir {
-			case asc:
-				db = db.Where(fmt.Sprintf("%s > ?", col), resource1.ID)
-			case desc:
-				db = db.Where(fmt.Sprintf("%s < ?", col), resource1.ID)
+
+			if c.Field != "id" {
+				ope += "="
 			}
+
+			wheres[i] = qm.Where(fmt.Sprintf("%s %s ?", cur.Field, ope), c.Value)
+		}
+
+		if page.First != nil {
+			limit = page.First + 1
 		}
 	}
+	else {
+		
+	}
+
+	orders := make([]interface{}, len(cursors))
+	
+	for i, o := range orders {
+		orders[i] = qm.Order(fmt.Sprintf("%s %s", o.Field, o.Direction))
+	}
+
+	orders = append(orders, qm.Order("id ASC"))
 
 	switch dir {
-	case asc:
+	case c:
 		db = db.Order(fmt.Sprintf("%s IS NULL ASC, id ASC", col))
 	case desc:
 		db = db.Order(fmt.Sprintf("%s DESC, id DESC", col))
