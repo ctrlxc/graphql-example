@@ -4,7 +4,7 @@ import (
 	"app/models"
 	"context"
 
-	"github.com/volatiletech/sqlboiler/queries/qm"
+	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 )
 
 func (r *Repository) BookByID(ctx context.Context, id int64) (*models.Book, error) {
@@ -33,7 +33,7 @@ func (r *Repository) BooksByShopID(ctx context.Context, id int64) ([]*models.Boo
 }
 
 func (r *Repository) BooksByShopIDs(ctx context.Context, ids []int64) (map[int64][]*models.Book, error) {
-	shops, _ := models.Books(
+	shops, _ := models.Shops(
 		models.ShopWhere.ID.IN(ids),
 		qm.Load(qm.Rels(models.ShopRels.Stocks, models.StockRels.Book)),
 	).All(ctx, r.db)

@@ -7,7 +7,6 @@ import (
 	generated1 "app/graph/generated"
 	model1 "app/graph/model"
 	"context"
-	"fmt"
 )
 
 func (r *queryResolver) Node(ctx context.Context, id string) (model1.Node, error) {
@@ -18,8 +17,12 @@ func (r *queryResolver) Nodes(ctx context.Context, ids []string) ([]model1.Node,
 	return r.nodes(ctx, ids)
 }
 
+func (r *queryResolver) Shops(ctx context.Context, after *string, before *string, first int, last *int, query string, orderBy []*model1.ShopOrder) (*model1.ShopConnection, error) {
+	return r.shops(ctx, after, before, first, last, query, orderBy)
+}
+
 func (r *shopResolver) Books(ctx context.Context, obj *model1.Shop) ([]*model1.Book, error) {
-	panic(fmt.Errorf("not implemented"))
+	return r.booksByShopID(ctx, obj.ID)
 }
 
 // Query returns generated1.QueryResolver implementation.

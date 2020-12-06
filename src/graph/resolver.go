@@ -2,16 +2,20 @@ package graph
 
 import (
 	"app/loader"
+	"app/models"
 	"app/repository"
 	"context"
 	"fmt"
+	"reflect"
 
 	// "errors"
 	"app/graph/model"
+	model1 "app/graph/model"
 
 	// "app/models"
 
 	_ "github.com/lib/pq"
+	"github.com/volatiletech/sqlboiler/queries/qm"
 )
 
 // This file will not be regenerated automatically.
@@ -33,15 +37,26 @@ func (r *Resolver) node(ctx context.Context, id string) (model.Node, error) {
 		return nil, err
 	}
 
-	var node model.Node = nil
+	v := reflect.ValueOf(r)
+	m := v.MethodByName(gid.Type + "ByID")
 
-	switch gid.Type {
-	case "Shop":
-		node, err = r.shop(ctx, id)
-	case "Book":
-		node, err = r.book(ctx, id)
-	default:
+	if m.Kind() != reflect.Func {
 		return nil, fmt.Errorf("unknown type. %s", gid.Type)
+	}
+
+	argv := []reflect.Value{reflect.ValueOf(ctx), reflect.ValueOf(id)}
+
+	result := m.Call(argv)
+
+	var node model.Node
+
+	for _, r := range result {
+		switch rv := r.Interface().(type) {
+		case model.Node:
+			node = rv
+		case error:
+			err = rv
+		}
 	}
 
 	return node, err
@@ -63,7 +78,7 @@ func (r *Resolver) nodes(ctx context.Context, ids []string) ([]model.Node, error
 	return nodes, nil
 }
 
-func (r *Resolver) shop(ctx context.Context, id string) (*model.Shop, error) {
+func (r *Resolver) ShopByID(ctx context.Context, id string) (*model.Shop, error) {
 	realid, err := fromGlobalIDInt64(id, "Shop")
 
 	if err != nil {
@@ -77,36 +92,38 @@ func (r *Resolver) shop(ctx context.Context, id string) (*model.Shop, error) {
 	}
 
 	return &model.Shop{
-		ID:       toGlobalIDInt64("Shop", record.ID),
-		ShopName: record.ShopName.Ptr(),
+		ID:        toGlobalIDInt64("Shop", record.ID),
+		ShopName:  record.ShopName.Ptr(),
+		CreatedAt: &record.CreatedAt,
+		UpdatedAt: &record.UpdatedAt,
 	}, nil
 }
 
-// func (r *Resolver) shops(ctx context.Context, after *string, before *string, first int, last *int, query string, orderBy []*model1.ShopOrder) ([]*model.Shop, error) {
-// 	realids, err := fromGlobalIDInt64s(ids, "Shop")
+func (r *Resolver) shops(ctx context.Context, after *string, before *string, first int, last *int, query string, orderBy []*model1.ShopOrder) ([]*model.Shop, error) {
+	m := models.Shops(
+		qm.Where(fmt.Sprintf("%s like ?", models.ShopColumns.ShopName), fmt.Sprintf("%%%s%%", name)),
+	)
 
-// 	if err != nil {
-// 		return nil, err
-// 	}
+	paginate(after, before, first, last, orderBy)
 
-// 	records, err := loader.LoadShops(ctx, realids)
+	records, err := loader.LoadShops(ctx, realids)
 
-// 	if err != nil {
-// 		return nil, err
-// 	}
+	if err != nil {
+		return nil, err
+	}
 
-// 	resp := make([]*model.Shop, 0, len(records))
-// 	for _, record := range records {
-// 		resp = append(resp, &model.Shop{
-// 			ID:       toGlobalIDInt64("Shop", record.ID),
-// 			ShopName: record.ShopName.Ptr(),
-// 		})
-// 	}
+	resp := make([]*model.Shop, 0, len(records))
+	for _, record := range records {
+		resp = append(resp, &model.Shop{
+			ID:       toGlobalIDInt64("Shop", record.ID),
+			ShopName: record.ShopName.Ptr(),
+		})
+	}
 
-// 	return resp, nil
-// }
+	return resp, nil
+}
 
-func (r *Resolver) book(ctx context.Context, id string) (*model.Book, error) {
+func (r *Resolver) BookByID(ctx context.Context, id string) (*model.Book, error) {
 	realid, err := fromGlobalIDInt64(id, "Book")
 
 	if err != nil {
@@ -149,7 +166,7 @@ func (r *Resolver) book(ctx context.Context, id string) (*model.Book, error) {
 // 	return resp, nil
 // }
 
-func (r *Resolver) booksByShopID(ctx context.Context, after *string, before *string, first int, last *int, id string, orderBy []*model.BookOrder) ([]*model.Book, error) {
+func (r *Resolver) booksByShopID(ctx context.Context, id string) ([]*model.Book, error) {
 	realid, err := fromGlobalIDInt64(id, "Shop")
 
 	if err != nil {

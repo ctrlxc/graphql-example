@@ -2,14 +2,14 @@ type Query {
   node(id: ID!): Node!
   nodes(ids: [ID!]): [Node!]!
 
-  # shops(
-  #   after: Cursor
-  #   before: Cursor
-  #   first: Int!
-  #   last: Int
-  #   query: String!
-  #   orderBy: [ShopOrder!] = [{field: CREATED_AT, direction: DESC}]
-  # ): ShopConnection!
+  shops(
+    after: Cursor
+    before: Cursor
+    first: Int!
+    last: Int
+    query: String!
+    orderBy: [ShopOrder!] = [{field: CREATED_AT, direction: DESC}]
+  ): ShopConnection!
 
   # books(
   #   after: Cursor
