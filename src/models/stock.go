@@ -13,6 +13,7 @@ import (
 	"sync"
 	"time"
 
+	"app/globalid"
 	"github.com/friendsofgo/errors"
 	"github.com/volatiletech/null/v8"
 	"github.com/volatiletech/sqlboiler/v4/boil"
@@ -22,24 +23,35 @@ import (
 	"github.com/volatiletech/strmangle"
 )
 
+// WARNING: required ID column
+func (o *Stock) GlobalID() string {
+	return globalid.ToGlobalID("Stock", o.ID)
+}
+
 // Stock is an object representing the database table.
 type Stock struct {
-	ID     int64      `boil:"id" json:"id" toml:"id" yaml:"id"`
-	ShopID null.Int64 `boil:"shop_id" json:"shop_id,omitempty" toml:"shop_id" yaml:"shop_id,omitempty"`
-	BookID null.Int64 `boil:"book_id" json:"book_id,omitempty" toml:"book_id" yaml:"book_id,omitempty"`
+	ID        int64      `boil:"id" json:"id" toml:"id" yaml:"id"`
+	ShopID    null.Int64 `boil:"shop_id" json:"shop_id,omitempty" toml:"shop_id" yaml:"shop_id,omitempty"`
+	BookID    null.Int64 `boil:"book_id" json:"book_id,omitempty" toml:"book_id" yaml:"book_id,omitempty"`
+	CreatedAt time.Time  `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
+	UpdatedAt time.Time  `boil:"updated_at" json:"updated_at" toml:"updated_at" yaml:"updated_at"`
 
 	R *stockR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L stockL  `boil:"-" json:"-" toml:"-" yaml:"-"`
 }
 
 var StockColumns = struct {
-	ID     string
-	ShopID string
-	BookID string
+	ID        string
+	ShopID    string
+	BookID    string
+	CreatedAt string
+	UpdatedAt string
 }{
-	ID:     "id",
-	ShopID: "shop_id",
-	BookID: "book_id",
+	ID:        "id",
+	ShopID:    "shop_id",
+	BookID:    "book_id",
+	CreatedAt: "created_at",
+	UpdatedAt: "updated_at",
 }
 
 // Generated where
@@ -68,13 +80,17 @@ func (w whereHelpernull_Int64) GTE(x null.Int64) qm.QueryMod {
 }
 
 var StockWhere = struct {
-	ID     whereHelperint64
-	ShopID whereHelpernull_Int64
-	BookID whereHelpernull_Int64
+	ID        whereHelperint64
+	ShopID    whereHelpernull_Int64
+	BookID    whereHelpernull_Int64
+	CreatedAt whereHelpertime_Time
+	UpdatedAt whereHelpertime_Time
 }{
-	ID:     whereHelperint64{field: "\"graphql\".\"stock\".\"id\""},
-	ShopID: whereHelpernull_Int64{field: "\"graphql\".\"stock\".\"shop_id\""},
-	BookID: whereHelpernull_Int64{field: "\"graphql\".\"stock\".\"book_id\""},
+	ID:        whereHelperint64{field: "\"graphql\".\"stock\".\"id\""},
+	ShopID:    whereHelpernull_Int64{field: "\"graphql\".\"stock\".\"shop_id\""},
+	BookID:    whereHelpernull_Int64{field: "\"graphql\".\"stock\".\"book_id\""},
+	CreatedAt: whereHelpertime_Time{field: "\"graphql\".\"stock\".\"created_at\""},
+	UpdatedAt: whereHelpertime_Time{field: "\"graphql\".\"stock\".\"updated_at\""},
 }
 
 // StockRels is where relationship names are stored.
@@ -101,8 +117,8 @@ func (*stockR) NewStruct() *stockR {
 type stockL struct{}
 
 var (
-	stockAllColumns            = []string{"id", "shop_id", "book_id"}
-	stockColumnsWithoutDefault = []string{"shop_id", "book_id"}
+	stockAllColumns            = []string{"id", "shop_id", "book_id", "created_at", "updated_at"}
+	stockColumnsWithoutDefault = []string{"shop_id", "book_id", "created_at", "updated_at"}
 	stockColumnsWithDefault    = []string{"id"}
 	stockPrimaryKeyColumns     = []string{"id"}
 )
@@ -826,6 +842,16 @@ func (o *Stock) Insert(ctx context.Context, exec boil.ContextExecutor, columns b
 	}
 
 	var err error
+	if !boil.TimestampsAreSkipped(ctx) {
+		currTime := time.Now().In(boil.GetLocation())
+
+		if o.CreatedAt.IsZero() {
+			o.CreatedAt = currTime
+		}
+		if o.UpdatedAt.IsZero() {
+			o.UpdatedAt = currTime
+		}
+	}
 
 	if err := o.doBeforeInsertHooks(ctx, exec); err != nil {
 		return err
@@ -901,6 +927,12 @@ func (o *Stock) Insert(ctx context.Context, exec boil.ContextExecutor, columns b
 // See boil.Columns.UpdateColumnSet documentation to understand column list inference for updates.
 // Update does not automatically update the record in case of default values. Use .Reload() to refresh the records.
 func (o *Stock) Update(ctx context.Context, exec boil.ContextExecutor, columns boil.Columns) (int64, error) {
+	if !boil.TimestampsAreSkipped(ctx) {
+		currTime := time.Now().In(boil.GetLocation())
+
+		o.UpdatedAt = currTime
+	}
+
 	var err error
 	if err = o.doBeforeUpdateHooks(ctx, exec); err != nil {
 		return 0, err
@@ -1030,6 +1062,14 @@ func (o StockSlice) UpdateAll(ctx context.Context, exec boil.ContextExecutor, co
 func (o *Stock) Upsert(ctx context.Context, exec boil.ContextExecutor, updateOnConflict bool, conflictColumns []string, updateColumns, insertColumns boil.Columns) error {
 	if o == nil {
 		return errors.New("models: no stock provided for upsert")
+	}
+	if !boil.TimestampsAreSkipped(ctx) {
+		currTime := time.Now().In(boil.GetLocation())
+
+		if o.CreatedAt.IsZero() {
+			o.CreatedAt = currTime
+		}
+		o.UpdatedAt = currTime
 	}
 
 	if err := o.doBeforeUpsertHooks(ctx, exec); err != nil {

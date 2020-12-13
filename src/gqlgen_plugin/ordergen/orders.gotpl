@@ -1,0 +1,18 @@
+{{ reserveImport "context"  }}
+{{ reserveImport "errors"  }}
+{{ reserveImport "fmt"  }}
+{{ reserveImport "strings"  }}
+
+{{ reserveImport "app/pagination"  }}
+
+{{ range $order := .Orders }}
+func {{ $order }}ToPaginationOrders(orders []*{{ $order }}) []*pagination.Order {
+	paginationOrders := make([]*pagination.Order, len(orders))
+
+	for i, o := range orders {
+		paginationOrders[i] = &pagination.Order{Field: strings.ToLower(string(*o.Field)), Direction: pagination.Direction(*o.Direction)}
+	}
+
+	return paginationOrders
+}
+{{- end}}

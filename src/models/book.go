@@ -13,6 +13,7 @@ import (
 	"sync"
 	"time"
 
+	"app/globalid"
 	"github.com/friendsofgo/errors"
 	"github.com/volatiletech/null/v8"
 	"github.com/volatiletech/sqlboiler/v4/boil"
@@ -22,10 +23,17 @@ import (
 	"github.com/volatiletech/strmangle"
 )
 
+// WARNING: required ID column
+func (o *Book) GlobalID() string {
+	return globalid.ToGlobalID("Book", o.ID)
+}
+
 // Book is an object representing the database table.
 type Book struct {
 	ID        int64       `boil:"id" json:"id" toml:"id" yaml:"id"`
 	BookTitle null.String `boil:"book_title" json:"book_title,omitempty" toml:"book_title" yaml:"book_title,omitempty"`
+	CreatedAt time.Time   `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
+	UpdatedAt time.Time   `boil:"updated_at" json:"updated_at" toml:"updated_at" yaml:"updated_at"`
 
 	R *bookR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L bookL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -34,9 +42,13 @@ type Book struct {
 var BookColumns = struct {
 	ID        string
 	BookTitle string
+	CreatedAt string
+	UpdatedAt string
 }{
 	ID:        "id",
 	BookTitle: "book_title",
+	CreatedAt: "created_at",
+	UpdatedAt: "updated_at",
 }
 
 // Generated where
@@ -87,12 +99,37 @@ func (w whereHelpernull_String) GTE(x null.String) qm.QueryMod {
 	return qmhelper.Where(w.field, qmhelper.GTE, x)
 }
 
+type whereHelpertime_Time struct{ field string }
+
+func (w whereHelpertime_Time) EQ(x time.Time) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.EQ, x)
+}
+func (w whereHelpertime_Time) NEQ(x time.Time) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.NEQ, x)
+}
+func (w whereHelpertime_Time) LT(x time.Time) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.LT, x)
+}
+func (w whereHelpertime_Time) LTE(x time.Time) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.LTE, x)
+}
+func (w whereHelpertime_Time) GT(x time.Time) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.GT, x)
+}
+func (w whereHelpertime_Time) GTE(x time.Time) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.GTE, x)
+}
+
 var BookWhere = struct {
 	ID        whereHelperint64
 	BookTitle whereHelpernull_String
+	CreatedAt whereHelpertime_Time
+	UpdatedAt whereHelpertime_Time
 }{
 	ID:        whereHelperint64{field: "\"graphql\".\"book\".\"id\""},
 	BookTitle: whereHelpernull_String{field: "\"graphql\".\"book\".\"book_title\""},
+	CreatedAt: whereHelpertime_Time{field: "\"graphql\".\"book\".\"created_at\""},
+	UpdatedAt: whereHelpertime_Time{field: "\"graphql\".\"book\".\"updated_at\""},
 }
 
 // BookRels is where relationship names are stored.
@@ -116,8 +153,8 @@ func (*bookR) NewStruct() *bookR {
 type bookL struct{}
 
 var (
-	bookAllColumns            = []string{"id", "book_title"}
-	bookColumnsWithoutDefault = []string{"book_title"}
+	bookAllColumns            = []string{"id", "book_title", "created_at", "updated_at"}
+	bookColumnsWithoutDefault = []string{"book_title", "created_at", "updated_at"}
 	bookColumnsWithDefault    = []string{"id"}
 	bookPrimaryKeyColumns     = []string{"id"}
 )
@@ -679,6 +716,16 @@ func (o *Book) Insert(ctx context.Context, exec boil.ContextExecutor, columns bo
 	}
 
 	var err error
+	if !boil.TimestampsAreSkipped(ctx) {
+		currTime := time.Now().In(boil.GetLocation())
+
+		if o.CreatedAt.IsZero() {
+			o.CreatedAt = currTime
+		}
+		if o.UpdatedAt.IsZero() {
+			o.UpdatedAt = currTime
+		}
+	}
 
 	if err := o.doBeforeInsertHooks(ctx, exec); err != nil {
 		return err
@@ -754,6 +801,12 @@ func (o *Book) Insert(ctx context.Context, exec boil.ContextExecutor, columns bo
 // See boil.Columns.UpdateColumnSet documentation to understand column list inference for updates.
 // Update does not automatically update the record in case of default values. Use .Reload() to refresh the records.
 func (o *Book) Update(ctx context.Context, exec boil.ContextExecutor, columns boil.Columns) (int64, error) {
+	if !boil.TimestampsAreSkipped(ctx) {
+		currTime := time.Now().In(boil.GetLocation())
+
+		o.UpdatedAt = currTime
+	}
+
 	var err error
 	if err = o.doBeforeUpdateHooks(ctx, exec); err != nil {
 		return 0, err
@@ -883,6 +936,14 @@ func (o BookSlice) UpdateAll(ctx context.Context, exec boil.ContextExecutor, col
 func (o *Book) Upsert(ctx context.Context, exec boil.ContextExecutor, updateOnConflict bool, conflictColumns []string, updateColumns, insertColumns boil.Columns) error {
 	if o == nil {
 		return errors.New("models: no book provided for upsert")
+	}
+	if !boil.TimestampsAreSkipped(ctx) {
+		currTime := time.Now().In(boil.GetLocation())
+
+		if o.CreatedAt.IsZero() {
+			o.CreatedAt = currTime
+		}
+		o.UpdatedAt = currTime
 	}
 
 	if err := o.doBeforeUpsertHooks(ctx, exec); err != nil {

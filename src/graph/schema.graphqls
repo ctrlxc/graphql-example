@@ -1,19 +1,117 @@
-type Shop {
-    id: ID!
-    shop_name: String
-    books: [Book!]!
-}
-
-type Book {
-    id: ID!
-    book_title: String
-}
-
 type Query {
-    shop(id: ID!): Shop!
-    shops(ids: [ID!]!): [Shop!]
+  node(id: ID!): Node!
+  nodes(ids: [ID!]): [Node!]!
 
-    book(id: ID!): Book!
-    books(ids: [ID!]!): [Book!]
-    booksByShopId(shop_id: ID!): [Book!]
+  shops(
+    after: Cursor
+    before: Cursor
+    first: Int
+    last: Int
+    query: String!
+    orderBy: [ShopOrder!] = [{field: CREATED_AT, direction: DESC}]
+  ): ShopConnection!
+
+  books(
+    after: Cursor
+    before: Cursor
+    first: Int
+    last: Int
+    query: String!
+    orderBy: [BookOrder!] = [{field: CREATED_AT, direction: DESC}]
+  ): BookConnection!
 }
+
+type Shop implements Node {
+  id: ID!
+  shopName: String
+  createdAt: DateTime
+  updatedAt: DateTime
+  books: [Book!]!
+}
+
+type ShopConnection implements Connection {
+  edges: [ShopEdge]
+  nodes: [Shop]
+  pageInfo: PageInfo!
+  totalCount: Int!
+}
+
+type ShopEdge implements Edge {
+  cursor: Cursor!
+  node: Shop!
+}
+
+input ShopOrder {
+  field: ShopOrderField
+  direction: OrderDirection
+}
+
+enum ShopOrderField {
+  ID
+  SHOP_NAME
+  CREATED_AT
+  UPDATED_AT
+}
+
+type Book implements Node {
+  id: ID!
+  bookTitle: String
+  createdAt: DateTime
+  updatedAt: DateTime
+}
+
+type BookConnection implements Connection {
+  edges: [BookEdge]
+  nodes: [Book]
+  pageInfo: PageInfo!
+  totalCount: Int!
+}
+
+type BookEdge implements Edge {
+  cursor: Cursor!
+  node: Book!
+}
+
+input BookOrder {
+  field: BookOrderField
+  direction: OrderDirection
+}
+
+enum BookOrderField {
+  ID
+  BOOK_TITLE
+  CREATED_AT
+  UPDATED_AT
+}
+
+enum OrderDirection {
+  ASC
+  DESC
+}
+
+type PageInfo {
+  startCursor: Cursor
+  endCursor: Cursor
+  hasPreviousPage: Boolean!
+  hasNextPage: Boolean!
+}
+
+interface Connection {
+  edges: [Edge]
+  nodes: [Node]
+  pageInfo: PageInfo!
+  totalCount: Int!
+}
+
+interface Edge {
+  cursor: Cursor!
+  node: Node!
+}
+
+interface Node {
+  id: ID!
+}
+
+scalar DateTime
+scalar Cursor
+

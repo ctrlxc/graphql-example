@@ -19,7 +19,7 @@ type bookIDKey struct {
 }
 
 func (key bookIDKey) String() string {
-	return fmt.Sprintf("%s.%v", reflect.TypeOf(key).Name(), key.id)
+	return fmt.Sprintf("%s/%v", reflect.TypeOf(key).Name(), key.id) // should be global unique
 }
 
 func (key bookIDKey) Raw() interface{} {
@@ -64,13 +64,13 @@ func LoadBooks(ctx context.Context, ids []int64) ([]*models.Book, error) {
 	return books, nil
 }
 
-func LoadBooksByShopID(ctx context.Context, shopID int64) ([]*models.Book, error) {
+func LoadBooksByShopID(ctx context.Context, id int64) ([]*models.Book, error) {
 	ldr, err := getLoader(ctx, bookLoaderKey)
 	if err != nil {
 		return nil, err
 	}
 
-	data, err := ldr.Load(ctx, shopIDKey{id: shopID})()
+	data, err := ldr.Load(ctx, shopIDKey{id: id})()
 	if err != nil {
 		return nil, err
 	}

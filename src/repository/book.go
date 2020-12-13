@@ -1,25 +1,25 @@
 package repository
 
 import (
-	"context"
 	"app/models"
+	"context"
 
 	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 )
 
 func (r *Repository) BookByID(ctx context.Context, id int64) (*models.Book, error) {
-	return models.FindBook(ctx, r.db, id)
+	return models.FindBook(ctx, r.Db, id)
 }
 
 func (r *Repository) BooksByIDs(ctx context.Context, ids []int64) ([]*models.Book, error) {
-	return models.Books(models.BookWhere.ID.IN(ids)).All(ctx, r.db)
+	return models.Books(models.BookWhere.ID.IN(ids)).All(ctx, r.Db)
 }
 
 func (r *Repository) BooksByShopID(ctx context.Context, id int64) ([]*models.Book, error) {
 	shops, _ := models.Shops(
 		models.ShopWhere.ID.EQ(id),
 		qm.Load(qm.Rels(models.ShopRels.Stocks, models.StockRels.Book)),
-	).All(ctx, r.db)
+	).All(ctx, r.Db)
 
 	books := make([]*models.Book, 0)
 
@@ -36,7 +36,7 @@ func (r *Repository) BooksByShopIDs(ctx context.Context, ids []int64) (map[int64
 	shops, _ := models.Shops(
 		models.ShopWhere.ID.IN(ids),
 		qm.Load(qm.Rels(models.ShopRels.Stocks, models.StockRels.Book)),
-	).All(ctx, r.db)
+	).All(ctx, r.Db)
 
 	books := make(map[int64][]*models.Book, 0)
 

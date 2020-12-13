@@ -19,7 +19,7 @@ type shopIDKey struct {
 }
 
 func (key shopIDKey) String() string {
-	return fmt.Sprintf("%s.%v", reflect.TypeOf(key).Name(), key.id)
+	return fmt.Sprintf("%s/%v", reflect.TypeOf(key).Name(), key.id) // should be global unique
 }
 
 func (key shopIDKey) Raw() interface{} {

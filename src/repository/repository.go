@@ -6,7 +6,7 @@ import (
 )
 
 type Repository struct {
-	db *sql.DB
+	Db *sql.DB
 }
 
 func New(dsn string) (*Repository, error) {
@@ -16,5 +16,5 @@ func New(dsn string) (*Repository, error) {
 		return nil, fmt.Errorf("Opening database failed: %v", err)
 	}
 
-	return &Repository{db: db}, nil
+	return &Repository{Db: db}, nil
 }

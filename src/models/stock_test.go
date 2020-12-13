@@ -888,7 +888,7 @@ func testStocksSelect(t *testing.T) {
 }
 
 var (
-	stockDBTypes = map[string]string{`ID`: `bigint`, `ShopID`: `bigint`, `BookID`: `bigint`}
+	stockDBTypes = map[string]string{`ID`: `bigint`, `ShopID`: `bigint`, `BookID`: `bigint`, `CreatedAt`: `timestamp without time zone`, `UpdatedAt`: `timestamp without time zone`}
 	_            = bytes.MinRead
 )
 

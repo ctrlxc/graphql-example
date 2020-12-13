@@ -2,13 +2,220 @@
 
 package model
 
+import (
+	"fmt"
+	"io"
+	"strconv"
+	"time"
+)
+
+type Connection interface {
+	IsConnection()
+}
+
+type Edge interface {
+	IsEdge()
+}
+
+type Node interface {
+	IsNode()
+}
+
 type Book struct {
-	ID        int64   `json:"id"`
-	BookTitle *string `json:"book_title"`
+	ID        string     `json:"id"`
+	BookTitle *string    `json:"bookTitle"`
+	CreatedAt *time.Time `json:"createdAt"`
+	UpdatedAt *time.Time `json:"updatedAt"`
+}
+
+func (Book) IsNode() {}
+
+type BookConnection struct {
+	Edges      []*BookEdge `json:"edges"`
+	Nodes      []*Book     `json:"nodes"`
+	PageInfo   *PageInfo   `json:"pageInfo"`
+	TotalCount int         `json:"totalCount"`
+}
+
+func (BookConnection) IsConnection() {}
+
+type BookEdge struct {
+	Cursor string `json:"cursor"`
+	Node   *Book  `json:"node"`
+}
+
+func (BookEdge) IsEdge() {}
+
+type BookOrder struct {
+	Field     *BookOrderField `json:"field"`
+	Direction *OrderDirection `json:"direction"`
+}
+
+type PageInfo struct {
+	StartCursor     *string `json:"startCursor"`
+	EndCursor       *string `json:"endCursor"`
+	HasPreviousPage bool    `json:"hasPreviousPage"`
+	HasNextPage     bool    `json:"hasNextPage"`
 }
 
 type Shop struct {
-	ID       int64   `json:"id"`
-	ShopName *string `json:"shop_name"`
-	Books    []*Book `json:"books"`
+	ID        string     `json:"id"`
+	ShopName  *string    `json:"shopName"`
+	CreatedAt *time.Time `json:"createdAt"`
+	UpdatedAt *time.Time `json:"updatedAt"`
+	Books     []*Book    `json:"books"`
+}
+
+func (Shop) IsNode() {}
+
+type ShopConnection struct {
+	Edges      []*ShopEdge `json:"edges"`
+	Nodes      []*Shop     `json:"nodes"`
+	PageInfo   *PageInfo   `json:"pageInfo"`
+	TotalCount int         `json:"totalCount"`
+}
+
+func (ShopConnection) IsConnection() {}
+
+type ShopEdge struct {
+	Cursor string `json:"cursor"`
+	Node   *Shop  `json:"node"`
+}
+
+func (ShopEdge) IsEdge() {}
+
+type ShopOrder struct {
+	Field     *ShopOrderField `json:"field"`
+	Direction *OrderDirection `json:"direction"`
+}
+
+type BookOrderField string
+
+const (
+	BookOrderFieldID        BookOrderField = "ID"
+	BookOrderFieldBookTitle BookOrderField = "BOOK_TITLE"
+	BookOrderFieldCreatedAt BookOrderField = "CREATED_AT"
+	BookOrderFieldUpdatedAt BookOrderField = "UPDATED_AT"
+)
+
+var AllBookOrderField = []BookOrderField{
+	BookOrderFieldID,
+	BookOrderFieldBookTitle,
+	BookOrderFieldCreatedAt,
+	BookOrderFieldUpdatedAt,
+}
+
+func (e BookOrderField) IsValid() bool {
+	switch e {
+	case BookOrderFieldID, BookOrderFieldBookTitle, BookOrderFieldCreatedAt, BookOrderFieldUpdatedAt:
+		return true
+	}
+	return false
+}
+
+func (e BookOrderField) String() string {
+	return string(e)
+}
+
+func (e *BookOrderField) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = BookOrderField(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid BookOrderField", str)
+	}
+	return nil
+}
+
+func (e BookOrderField) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type OrderDirection string
+
+const (
+	OrderDirectionAsc  OrderDirection = "ASC"
+	OrderDirectionDesc OrderDirection = "DESC"
+)
+
+var AllOrderDirection = []OrderDirection{
+	OrderDirectionAsc,
+	OrderDirectionDesc,
+}
+
+func (e OrderDirection) IsValid() bool {
+	switch e {
+	case OrderDirectionAsc, OrderDirectionDesc:
+		return true
+	}
+	return false
+}
+
+func (e OrderDirection) String() string {
+	return string(e)
+}
+
+func (e *OrderDirection) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = OrderDirection(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid OrderDirection", str)
+	}
+	return nil
+}
+
+func (e OrderDirection) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type ShopOrderField string
+
+const (
+	ShopOrderFieldID        ShopOrderField = "ID"
+	ShopOrderFieldShopName  ShopOrderField = "SHOP_NAME"
+	ShopOrderFieldCreatedAt ShopOrderField = "CREATED_AT"
+	ShopOrderFieldUpdatedAt ShopOrderField = "UPDATED_AT"
+)
+
+var AllShopOrderField = []ShopOrderField{
+	ShopOrderFieldID,
+	ShopOrderFieldShopName,
+	ShopOrderFieldCreatedAt,
+	ShopOrderFieldUpdatedAt,
+}
+
+func (e ShopOrderField) IsValid() bool {
+	switch e {
+	case ShopOrderFieldID, ShopOrderFieldShopName, ShopOrderFieldCreatedAt, ShopOrderFieldUpdatedAt:
+		return true
+	}
+	return false
+}
+
+func (e ShopOrderField) String() string {
+	return string(e)
+}
+
+func (e *ShopOrderField) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = ShopOrderField(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid ShopOrderField", str)
+	}
+	return nil
+}
+
+func (e ShopOrderField) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
 }
