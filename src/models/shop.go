@@ -13,7 +13,7 @@ import (
 	"sync"
 	"time"
 
-	"app/util"
+	"app/globalid"
 	"github.com/friendsofgo/errors"
 	"github.com/volatiletech/null/v8"
 	"github.com/volatiletech/sqlboiler/v4/boil"
@@ -22,6 +22,11 @@ import (
 	"github.com/volatiletech/sqlboiler/v4/queries/qmhelper"
 	"github.com/volatiletech/strmangle"
 )
+
+// WARNING: required ID column
+func (o *Shop) GlobalID() string {
+	return globalid.ToGlobalID("Shop", o.ID)
+}
 
 // Shop is an object representing the database table.
 type Shop struct {
@@ -1147,9 +1152,4 @@ func ShopExists(ctx context.Context, exec boil.ContextExecutor, iD int64) (bool,
 	}
 
 	return exists, nil
-}
-
-// WARNING: required ID column
-func (o *Shop) GlobalID() string {
-	return util.ToGlobalID("Shop", o.ID)
 }

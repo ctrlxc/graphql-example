@@ -1,4 +1,4 @@
-package customgen
+package ordergen
 
 import (
 	"path/filepath"

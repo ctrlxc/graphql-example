@@ -11,23 +11,14 @@ type Query {
     orderBy: [ShopOrder!] = [{field: CREATED_AT, direction: DESC}]
   ): ShopConnection!
 
-  # books(
-  #   after: Cursor
-  #   before: Cursor
-  #   first: Int!
-  #   last: Int
-  #   query: String!
-  #   orderBy: [BookOrder!] = [{field: CREATED_AT, direction: DESC}]
-  # ): BookConnection!
-
-  # booksByShopId(
-  #   after: Cursor
-  #   before: Cursor
-  #   first: Int
-  #   last: Int
-  #   id: ID!
-  #   orderBy: [BookOrder!] = [{field: CREATED_AT, direction: DESC}]
-  # ): BookConnection!
+  books(
+    after: Cursor
+    before: Cursor
+    first: Int
+    last: Int
+    query: String!
+    orderBy: [BookOrder!] = [{field: CREATED_AT, direction: DESC}]
+  ): BookConnection!
 }
 
 type Shop implements Node {

@@ -13,7 +13,7 @@ import (
 	"sync"
 	"time"
 
-	"app/util"
+	"app/globalid"
 	"github.com/friendsofgo/errors"
 	"github.com/volatiletech/null/v8"
 	"github.com/volatiletech/sqlboiler/v4/boil"
@@ -22,6 +22,11 @@ import (
 	"github.com/volatiletech/sqlboiler/v4/queries/qmhelper"
 	"github.com/volatiletech/strmangle"
 )
+
+// WARNING: required ID column
+func (o *Book) GlobalID() string {
+	return globalid.ToGlobalID("Book", o.ID)
+}
 
 // Book is an object representing the database table.
 type Book struct {
@@ -1214,9 +1219,4 @@ func BookExists(ctx context.Context, exec boil.ContextExecutor, iD int64) (bool,
 	}
 
 	return exists, nil
-}
-
-// WARNING: required ID column
-func (o *Book) GlobalID() string {
-	return util.ToGlobalID("Book", o.ID)
 }

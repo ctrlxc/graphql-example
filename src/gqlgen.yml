@@ -64,8 +64,3 @@ models:
     fields:
       books:
         resolver: true
-  ShopConnection:
-    fields:
-      totalCount:
-        resolver: true
-    

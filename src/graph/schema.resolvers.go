@@ -4,43 +4,36 @@ package graph
 // will be copied through when generating and any unknown code will be moved to the end.
 
 import (
-	generated1 "app/graph/generated"
-	model1 "app/graph/model"
+	"app/graph/generated"
+	"app/graph/model"
 	"context"
-	"fmt"
 )
 
-func (r *queryResolver) Node(ctx context.Context, id string) (model1.Node, error) {
+func (r *queryResolver) Node(ctx context.Context, id string) (model.Node, error) {
 	return r.node(ctx, id)
 }
 
-func (r *queryResolver) Nodes(ctx context.Context, ids []string) ([]model1.Node, error) {
+func (r *queryResolver) Nodes(ctx context.Context, ids []string) ([]model.Node, error) {
 	return r.nodes(ctx, ids)
 }
 
-func (r *queryResolver) Shops(ctx context.Context, after *string, before *string, first *int, last *int, query string, orderBy []*model1.ShopOrder) (*model1.ShopConnection, error) {
+func (r *queryResolver) Shops(ctx context.Context, after *string, before *string, first *int, last *int, query string, orderBy []*model.ShopOrder) (*model.ShopConnection, error) {
 	return r.shops(ctx, after, before, first, last, query, orderBy)
 }
 
-func (r *shopResolver) Books(ctx context.Context, obj *model1.Shop) ([]*model1.Book, error) {
+func (r *queryResolver) Books(ctx context.Context, after *string, before *string, first *int, last *int, query string, orderBy []*model.BookOrder) (*model.BookConnection, error) {
+	return r.books(ctx, after, before, first, last, query, orderBy)
+}
+
+func (r *shopResolver) Books(ctx context.Context, obj *model.Shop) ([]*model.Book, error) {
 	return r.booksByShopID(ctx, obj.ID)
 }
 
-func (r *shopConnectionResolver) TotalCount(ctx context.Context, obj *model1.ShopConnection) (int, error) {
-	panic(fmt.Errorf("not implemented"))
-}
+// Query returns generated.QueryResolver implementation.
+func (r *Resolver) Query() generated.QueryResolver { return &queryResolver{r} }
 
-// Query returns generated1.QueryResolver implementation.
-func (r *Resolver) Query() generated1.QueryResolver { return &queryResolver{r} }
-
-// Shop returns generated1.ShopResolver implementation.
-func (r *Resolver) Shop() generated1.ShopResolver { return &shopResolver{r} }
-
-// ShopConnection returns generated1.ShopConnectionResolver implementation.
-func (r *Resolver) ShopConnection() generated1.ShopConnectionResolver {
-	return &shopConnectionResolver{r}
-}
+// Shop returns generated.ShopResolver implementation.
+func (r *Resolver) Shop() generated.ShopResolver { return &shopResolver{r} }
 
 type queryResolver struct{ *Resolver }
 type shopResolver struct{ *Resolver }
-type shopConnectionResolver struct{ *Resolver }

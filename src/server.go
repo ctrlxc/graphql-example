@@ -1,7 +1,7 @@
 package main
 
-//go:generate gqlgen generate
-//go:generate sqlboiler --wipe --templates "${GOPATH}/src/github.com/volatiletech/sqlboiler/templates,${GOPATH}/src/github.com/volatiletech/sqlboiler/templates_test,${GOPATH}/src/app/templates" psql
+//go:generate go run gqlgen.go
+//go:generate sqlboiler --wipe --templates "${GOPATH}/src/github.com/volatiletech/sqlboiler/templates,${GOPATH}/src/github.com/volatiletech/sqlboiler/templates_test,${GOPATH}/src/app/sqlboiler_templates" psql
 
 import (
 	"app/graph"

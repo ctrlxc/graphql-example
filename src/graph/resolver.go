@@ -1,11 +1,11 @@
 package graph
 
 import (
+	"app/globalid"
 	"app/loader"
 	"app/models"
-	"app/paginator"
+	"app/pagination"
 	"app/repository"
-	"app/util"
 	"context"
 	"fmt"
 	"reflect"
@@ -32,7 +32,7 @@ func NewResolver(repo *repository.Repository) *Resolver {
 }
 
 func (r *Resolver) node(ctx context.Context, id string) (model.Node, error) {
-	gid, err := util.FromGlobalID(id)
+	gid, err := globalid.FromGlobalID(id)
 
 	if err != nil {
 		return nil, err
@@ -80,13 +80,13 @@ func (r *Resolver) nodes(ctx context.Context, ids []string) ([]model.Node, error
 }
 
 func (r *Resolver) ShopByID(ctx context.Context, id string) (*model.Shop, error) {
-	realid, err := util.FromGlobalIDInt64(id, "Shop")
+	shopId, err := globalid.FromGlobalIDInt64(id, "Shop")
 
 	if err != nil {
 		return nil, err
 	}
 
-	record, err := loader.LoadShop(ctx, realid)
+	record, err := loader.LoadShop(ctx, shopId)
 
 	if err != nil {
 		return nil, err
@@ -101,46 +101,44 @@ func (r *Resolver) ShopByID(ctx context.Context, id string) (*model.Shop, error)
 }
 
 func (r *Resolver) shops(ctx context.Context, after *string, before *string, first *int, last *int, query string, orderBy []*model.ShopOrder) (*model.ShopConnection, error) {
-	pageOrders := model.ShopOrderToPaginatorOrder(orderBy)
-	pagenator := paginator.Paginator{after, before, first, last, pageOrders}
+	condtion := qm.Where(fmt.Sprintf("%s like ?", models.ShopColumns.ShopName), fmt.Sprintf("%%%s%%", query))
+
+	pagination := pagination.Pagination{after, before, first, last, model.ShopOrderToPaginationOrders(orderBy)}
 
 	shops, err := models.Shops(
-		qm.Where(fmt.Sprintf("%s like ?", models.ShopColumns.ShopName), fmt.Sprintf("%%%s%%", query)),
-		pagenator.QueryWhere(),
-		pagenator.QueryOrderBy(),
-		pagenator.QueryLimit(),
+		pagination.Queries(condtion)...,
 	).All(ctx, r.repo.Db)
 
 	if err != nil {
 		return nil, err
 	}
 
-	conn := &model.ShopConnection{
-		PageInfo: &model.PageInfo{},
-	}
+	conn := &model.ShopConnection{}
 
 	if len(shops) == 0 {
 		return conn, nil
 	}
 
 	limit := len(shops)
-	if limit > pagenator.Limit() {
-		limit = pagenator.Limit()
+	if limit > pagination.Limit() {
+		limit = pagination.Limit()
 	}
 
 	conn.Edges = make([]*model.ShopEdge, limit)
 	conn.Nodes = make([]*model.Shop, limit)
 
 	for i, s := range shops[:limit] {
-		cursor, _ := pagenator.CreateEncodedCursor(s)
+		cursor, _ := pagination.CreateEncodedCursor(s)
 
 		node := &model.Shop{
-			ID:       s.GlobalID(),
-			ShopName: s.ShopName.Ptr(),
+			ID:        s.GlobalID(),
+			ShopName:  s.ShopName.Ptr(),
+			CreatedAt: &s.CreatedAt,
+			UpdatedAt: &s.UpdatedAt,
 		}
 
 		pos := i
-		if !pagenator.IsAfter() {
+		if !pagination.IsAfter() {
 			pos = len(conn.Edges) - i - 1
 		}
 
@@ -148,28 +146,38 @@ func (r *Resolver) shops(ctx context.Context, after *string, before *string, fir
 		conn.Nodes[pos] = node
 	}
 
-	conn.PageInfo.StartCursor = &conn.Edges[0].Cursor
-	conn.PageInfo.EndCursor = &conn.Edges[len(conn.Edges)-1].Cursor
+	conn.PageInfo = &model.PageInfo{
+		StartCursor: &conn.Edges[0].Cursor,
+		EndCursor:   &conn.Edges[len(conn.Edges)-1].Cursor,
+	}
 
 	if len(shops) > limit {
-		if pagenator.IsAfter() {
+		if pagination.IsAfter() {
 			conn.PageInfo.HasNextPage = true
 		} else {
 			conn.PageInfo.HasPreviousPage = true
 		}
 	}
 
+	totalCount, err := models.Shops(condtion).Count(ctx, r.repo.Db)
+
+	if err != nil {
+		return conn, err
+	}
+
+	conn.TotalCount = int(totalCount)
+
 	return conn, nil
 }
 
 func (r *Resolver) BookByID(ctx context.Context, id string) (*model.Book, error) {
-	realid, err := util.FromGlobalIDInt64(id, "Book")
+	bookId, err := globalid.FromGlobalIDInt64(id, "Book")
 
 	if err != nil {
 		return nil, err
 	}
 
-	record, err := loader.LoadBook(ctx, realid)
+	record, err := loader.LoadBook(ctx, bookId)
 
 	if err != nil {
 		return nil, err
@@ -181,49 +189,96 @@ func (r *Resolver) BookByID(ctx context.Context, id string) (*model.Book, error)
 	}, nil
 }
 
-// func (r *Resolver) books(ctx context.Context, after *string, before *string, first int, last *int, query string, orderBy []*model.BookOrder) ([]*model.Book, error) {
-// 	realids, err := util.FromGlobalIDInt64s(ids, "Book")
+func (r *Resolver) books(ctx context.Context, after *string, before *string, first *int, last *int, query string, orderBy []*model.BookOrder) (*model.BookConnection, error) {
+	condition := qm.Where(fmt.Sprintf("%s like ?", models.BookColumns.BookTitle), fmt.Sprintf("%%%s%%", query))
 
-// 	if err != nil {
-// 		return nil, err
-// 	}
+	pagination := pagination.Pagination{after, before, first, last, model.BookOrderToPaginationOrders(orderBy)}
 
-// 	records, err := loader.LoadBooks(ctx, realids)
+	books, err := models.Books(
+		pagination.Queries(condition)...,
+	).All(ctx, r.repo.Db)
 
-// 	if err != nil {
-// 		return nil, err
-// 	}
+	if err != nil {
+		return nil, err
+	}
 
-// 	resp := make([]*model.Book, 0, len(records))
-// 	for _, record := range records {
-// 		resp = append(resp, &model.Book{
-// 			ID:        toGlobalIDInt64("Book", record.ID),
-// 			BookTitle: record.BookTitle.Ptr(),
-// 		})
-// 	}
+	conn := &model.BookConnection{}
 
-// 	return resp, nil
-// }
+	if len(books) == 0 {
+		return conn, nil
+	}
+
+	limit := len(books)
+	if limit > pagination.Limit() {
+		limit = pagination.Limit()
+	}
+
+	conn.Edges = make([]*model.BookEdge, limit)
+	conn.Nodes = make([]*model.Book, limit)
+
+	for i, s := range books[:limit] {
+		cursor, _ := pagination.CreateEncodedCursor(s)
+
+		node := &model.Book{
+			ID:        s.GlobalID(),
+			BookTitle: s.BookTitle.Ptr(),
+			CreatedAt: &s.CreatedAt,
+			UpdatedAt: &s.UpdatedAt,
+		}
+
+		pos := i
+		if !pagination.IsAfter() {
+			pos = len(conn.Edges) - i - 1
+		}
+
+		conn.Edges[pos] = &model.BookEdge{Cursor: cursor, Node: node}
+		conn.Nodes[pos] = node
+	}
+
+	conn.PageInfo = &model.PageInfo{
+		StartCursor: &conn.Edges[0].Cursor,
+		EndCursor:   &conn.Edges[len(conn.Edges)-1].Cursor,
+	}
+
+	if len(books) > limit {
+		if pagination.IsAfter() {
+			conn.PageInfo.HasNextPage = true
+		} else {
+			conn.PageInfo.HasPreviousPage = true
+		}
+	}
+
+	totalCount, err := models.Books(condition).Count(ctx, r.repo.Db)
+
+	if err != nil {
+		return conn, err
+	}
+
+	conn.TotalCount = int(totalCount)
+
+	return conn, nil
+}
 
 func (r *Resolver) booksByShopID(ctx context.Context, id string) ([]*model.Book, error) {
-	realid, err := util.FromGlobalIDInt64(id, "Shop")
+	shopId, err := globalid.FromGlobalIDInt64(id, "Shop")
 
 	if err != nil {
 		return nil, err
 	}
 
-	records, err := loader.LoadBooksByShopID(ctx, realid)
+	records, err := loader.LoadBooksByShopID(ctx, shopId)
 
 	if err != nil {
 		return nil, err
 	}
 
-	resp := make([]*model.Book, 0, len(records))
-	for _, record := range records {
-		resp = append(resp, &model.Book{
+	resp := make([]*model.Book, len(records))
+
+	for i, record := range records {
+		resp[i] = &model.Book{
 			ID:        record.GlobalID(),
 			BookTitle: &record.BookTitle.String,
-		})
+		}
 	}
 
 	return resp, nil

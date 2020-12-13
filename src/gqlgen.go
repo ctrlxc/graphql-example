@@ -1,7 +1,7 @@
 package main
 
 import (
-	"app/customgen"
+	"app/gqlgen_plugin/ordergen"
 	"fmt"
 	"os"
 
@@ -17,7 +17,7 @@ func main() {
 	}
 
 	err = api.Generate(cfg,
-		api.AddPlugin(customgen.New("customs_gen.go")), // This is the magic line
+		api.AddPlugin(ordergen.New("orders_gen.go")), // This is the magic line
 	)
 
 	if err != nil {

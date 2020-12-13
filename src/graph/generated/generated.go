@@ -39,7 +39,6 @@ type Config struct {
 type ResolverRoot interface {
 	Query() QueryResolver
 	Shop() ShopResolver
-	ShopConnection() ShopConnectionResolver
 }
 
 type DirectiveRoot struct {
@@ -73,6 +72,7 @@ type ComplexityRoot struct {
 	}
 
 	Query struct {
+		Books func(childComplexity int, after *string, before *string, first *int, last *int, query string, orderBy []*model.BookOrder) int
 		Node  func(childComplexity int, id string) int
 		Nodes func(childComplexity int, ids []string) int
 		Shops func(childComplexity int, after *string, before *string, first *int, last *int, query string, orderBy []*model.ShopOrder) int
@@ -103,12 +103,10 @@ type QueryResolver interface {
 	Node(ctx context.Context, id string) (model.Node, error)
 	Nodes(ctx context.Context, ids []string) ([]model.Node, error)
 	Shops(ctx context.Context, after *string, before *string, first *int, last *int, query string, orderBy []*model.ShopOrder) (*model.ShopConnection, error)
+	Books(ctx context.Context, after *string, before *string, first *int, last *int, query string, orderBy []*model.BookOrder) (*model.BookConnection, error)
 }
 type ShopResolver interface {
 	Books(ctx context.Context, obj *model.Shop) ([]*model.Book, error)
-}
-type ShopConnectionResolver interface {
-	TotalCount(ctx context.Context, obj *model.ShopConnection) (int, error)
 }
 
 type executableSchema struct {
@@ -223,6 +221,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.PageInfo.StartCursor(childComplexity), true
+
+	case "Query.books":
+		if e.complexity.Query.Books == nil {
+			break
+		}
+
+		args, err := ec.field_Query_books_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.Books(childComplexity, args["after"].(*string), args["before"].(*string), args["first"].(*int), args["last"].(*int), args["query"].(string), args["orderBy"].([]*model.BookOrder)), true
 
 	case "Query.node":
 		if e.complexity.Query.Node == nil {
@@ -400,23 +410,14 @@ var sources = []*ast.Source{
     orderBy: [ShopOrder!] = [{field: CREATED_AT, direction: DESC}]
   ): ShopConnection!
 
-  # books(
-  #   after: Cursor
-  #   before: Cursor
-  #   first: Int!
-  #   last: Int
-  #   query: String!
-  #   orderBy: [BookOrder!] = [{field: CREATED_AT, direction: DESC}]
-  # ): BookConnection!
-
-  # booksByShopId(
-  #   after: Cursor
-  #   before: Cursor
-  #   first: Int
-  #   last: Int
-  #   id: ID!
-  #   orderBy: [BookOrder!] = [{field: CREATED_AT, direction: DESC}]
-  # ): BookConnection!
+  books(
+    after: Cursor
+    before: Cursor
+    first: Int
+    last: Int
+    query: String!
+    orderBy: [BookOrder!] = [{field: CREATED_AT, direction: DESC}]
+  ): BookConnection!
 }
 
 type Shop implements Node {
@@ -533,6 +534,66 @@ func (ec *executionContext) field_Query___type_args(ctx context.Context, rawArgs
 		}
 	}
 	args["name"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_books_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *string
+	if tmp, ok := rawArgs["after"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("after"))
+		arg0, err = ec.unmarshalOCursor2ᚖstring(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["after"] = arg0
+	var arg1 *string
+	if tmp, ok := rawArgs["before"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("before"))
+		arg1, err = ec.unmarshalOCursor2ᚖstring(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["before"] = arg1
+	var arg2 *int
+	if tmp, ok := rawArgs["first"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("first"))
+		arg2, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["first"] = arg2
+	var arg3 *int
+	if tmp, ok := rawArgs["last"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("last"))
+		arg3, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["last"] = arg3
+	var arg4 string
+	if tmp, ok := rawArgs["query"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("query"))
+		arg4, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["query"] = arg4
+	var arg5 []*model.BookOrder
+	if tmp, ok := rawArgs["orderBy"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("orderBy"))
+		arg5, err = ec.unmarshalOBookOrder2ᚕᚖappᚋgraphᚋmodelᚐBookOrderᚄ(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["orderBy"] = arg5
 	return args, nil
 }
 
@@ -1259,6 +1320,48 @@ func (ec *executionContext) _Query_shops(ctx context.Context, field graphql.Coll
 	return ec.marshalNShopConnection2ᚖappᚋgraphᚋmodelᚐShopConnection(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Query_books(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Query_books_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().Books(rctx, args["after"].(*string), args["before"].(*string), args["first"].(*int), args["last"].(*int), args["query"].(string), args["orderBy"].([]*model.BookOrder))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.BookConnection)
+	fc.Result = res
+	return ec.marshalNBookConnection2ᚖappᚋgraphᚋmodelᚐBookConnection(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Query___type(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -1606,14 +1709,14 @@ func (ec *executionContext) _ShopConnection_totalCount(ctx context.Context, fiel
 		Object:     "ShopConnection",
 		Field:      field,
 		Args:       nil,
-		IsMethod:   true,
-		IsResolver: true,
+		IsMethod:   false,
+		IsResolver: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.ShopConnection().TotalCount(rctx, obj)
+		return obj.TotalCount, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -3114,6 +3217,20 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 				}
 				return res
 			})
+		case "books":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_books(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
 		case "__type":
 			out.Values[i] = ec._Query___type(ctx, field)
 		case "__schema":
@@ -3194,22 +3311,13 @@ func (ec *executionContext) _ShopConnection(ctx context.Context, sel ast.Selecti
 		case "pageInfo":
 			out.Values[i] = ec._ShopConnection_pageInfo(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&invalids, 1)
+				invalids++
 			}
 		case "totalCount":
-			field := field
-			out.Concurrently(i, func() (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._ShopConnection_totalCount(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
-				return res
-			})
+			out.Values[i] = ec._ShopConnection_totalCount(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -3543,6 +3651,25 @@ func (ec *executionContext) marshalNBook2ᚖappᚋgraphᚋmodelᚐBook(ctx conte
 		return graphql.Null
 	}
 	return ec._Book(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNBookConnection2appᚋgraphᚋmodelᚐBookConnection(ctx context.Context, sel ast.SelectionSet, v model.BookConnection) graphql.Marshaler {
+	return ec._BookConnection(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNBookConnection2ᚖappᚋgraphᚋmodelᚐBookConnection(ctx context.Context, sel ast.SelectionSet, v *model.BookConnection) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._BookConnection(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNBookOrder2ᚖappᚋgraphᚋmodelᚐBookOrder(ctx context.Context, v interface{}) (*model.BookOrder, error) {
+	res, err := ec.unmarshalInputBookOrder(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) unmarshalNBoolean2bool(ctx context.Context, v interface{}) (bool, error) {
@@ -4027,6 +4154,30 @@ func (ec *executionContext) marshalOBookEdge2ᚖappᚋgraphᚋmodelᚐBookEdge(c
 		return graphql.Null
 	}
 	return ec._BookEdge(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalOBookOrder2ᚕᚖappᚋgraphᚋmodelᚐBookOrderᚄ(ctx context.Context, v interface{}) ([]*model.BookOrder, error) {
+	if v == nil {
+		return nil, nil
+	}
+	var vSlice []interface{}
+	if v != nil {
+		if tmp1, ok := v.([]interface{}); ok {
+			vSlice = tmp1
+		} else {
+			vSlice = []interface{}{v}
+		}
+	}
+	var err error
+	res := make([]*model.BookOrder, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNBookOrder2ᚖappᚋgraphᚋmodelᚐBookOrder(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
 }
 
 func (ec *executionContext) unmarshalOBookOrderField2ᚖappᚋgraphᚋmodelᚐBookOrderField(ctx context.Context, v interface{}) (*model.BookOrderField, error) {
