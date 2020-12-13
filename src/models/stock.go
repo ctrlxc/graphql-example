@@ -13,6 +13,7 @@ import (
 	"sync"
 	"time"
 
+	"app/util"
 	"github.com/friendsofgo/errors"
 	"github.com/volatiletech/null/v8"
 	"github.com/volatiletech/sqlboiler/v4/boil"
@@ -1339,4 +1340,9 @@ func StockExists(ctx context.Context, exec boil.ContextExecutor, iD int64) (bool
 	}
 
 	return exists, nil
+}
+
+// WARNING: required ID column
+func (o *Stock) GlobalID() string {
+	return util.ToGlobalID("Stock", o.ID)
 }

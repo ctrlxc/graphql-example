@@ -3,19 +3,20 @@ package graph
 import (
 	"app/loader"
 	"app/models"
+	"app/paginator"
 	"app/repository"
+	"app/util"
 	"context"
 	"fmt"
 	"reflect"
 
 	// "errors"
 	"app/graph/model"
-	model1 "app/graph/model"
 
 	// "app/models"
 
 	_ "github.com/lib/pq"
-	"github.com/volatiletech/sqlboiler/queries/qm"
+	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 )
 
 // This file will not be regenerated automatically.
@@ -31,7 +32,7 @@ func NewResolver(repo *repository.Repository) *Resolver {
 }
 
 func (r *Resolver) node(ctx context.Context, id string) (model.Node, error) {
-	gid, err := fromGlobalID(id)
+	gid, err := util.FromGlobalID(id)
 
 	if err != nil {
 		return nil, err
@@ -79,7 +80,7 @@ func (r *Resolver) nodes(ctx context.Context, ids []string) ([]model.Node, error
 }
 
 func (r *Resolver) ShopByID(ctx context.Context, id string) (*model.Shop, error) {
-	realid, err := fromGlobalIDInt64(id, "Shop")
+	realid, err := util.FromGlobalIDInt64(id, "Shop")
 
 	if err != nil {
 		return nil, err
@@ -92,39 +93,77 @@ func (r *Resolver) ShopByID(ctx context.Context, id string) (*model.Shop, error)
 	}
 
 	return &model.Shop{
-		ID:        toGlobalIDInt64("Shop", record.ID),
+		ID:        record.GlobalID(),
 		ShopName:  record.ShopName.Ptr(),
 		CreatedAt: &record.CreatedAt,
 		UpdatedAt: &record.UpdatedAt,
 	}, nil
 }
 
-func (r *Resolver) shops(ctx context.Context, after *string, before *string, first int, last *int, query string, orderBy []*model1.ShopOrder) ([]*model.Shop, error) {
-	m := models.Shops(
-		qm.Where(fmt.Sprintf("%s like ?", models.ShopColumns.ShopName), fmt.Sprintf("%%%s%%", name)),
-	)
+func (r *Resolver) shops(ctx context.Context, after *string, before *string, first *int, last *int, query string, orderBy []*model.ShopOrder) (*model.ShopConnection, error) {
+	pageOrders := model.ShopOrderToPaginatorOrder(orderBy)
+	pagenator := paginator.Paginator{after, before, first, last, pageOrders}
 
-	paginate(after, before, first, last, orderBy)
-
-	records, err := loader.LoadShops(ctx, realids)
+	shops, err := models.Shops(
+		qm.Where(fmt.Sprintf("%s like ?", models.ShopColumns.ShopName), fmt.Sprintf("%%%s%%", query)),
+		pagenator.QueryWhere(),
+		pagenator.QueryOrderBy(),
+		pagenator.QueryLimit(),
+	).All(ctx, r.repo.Db)
 
 	if err != nil {
 		return nil, err
 	}
 
-	resp := make([]*model.Shop, 0, len(records))
-	for _, record := range records {
-		resp = append(resp, &model.Shop{
-			ID:       toGlobalIDInt64("Shop", record.ID),
-			ShopName: record.ShopName.Ptr(),
-		})
+	conn := &model.ShopConnection{
+		PageInfo: &model.PageInfo{},
 	}
 
-	return resp, nil
+	if len(shops) == 0 {
+		return conn, nil
+	}
+
+	limit := len(shops)
+	if limit > pagenator.Limit() {
+		limit = pagenator.Limit()
+	}
+
+	conn.Edges = make([]*model.ShopEdge, limit)
+	conn.Nodes = make([]*model.Shop, limit)
+
+	for i, s := range shops[:limit] {
+		cursor, _ := pagenator.CreateEncodedCursor(s)
+
+		node := &model.Shop{
+			ID:       s.GlobalID(),
+			ShopName: s.ShopName.Ptr(),
+		}
+
+		pos := i
+		if !pagenator.IsAfter() {
+			pos = len(conn.Edges) - i - 1
+		}
+
+		conn.Edges[pos] = &model.ShopEdge{Cursor: cursor, Node: node}
+		conn.Nodes[pos] = node
+	}
+
+	conn.PageInfo.StartCursor = &conn.Edges[0].Cursor
+	conn.PageInfo.EndCursor = &conn.Edges[len(conn.Edges)-1].Cursor
+
+	if len(shops) > limit {
+		if pagenator.IsAfter() {
+			conn.PageInfo.HasNextPage = true
+		} else {
+			conn.PageInfo.HasPreviousPage = true
+		}
+	}
+
+	return conn, nil
 }
 
 func (r *Resolver) BookByID(ctx context.Context, id string) (*model.Book, error) {
-	realid, err := fromGlobalIDInt64(id, "Book")
+	realid, err := util.FromGlobalIDInt64(id, "Book")
 
 	if err != nil {
 		return nil, err
@@ -137,13 +176,13 @@ func (r *Resolver) BookByID(ctx context.Context, id string) (*model.Book, error)
 	}
 
 	return &model.Book{
-		ID:        toGlobalIDInt64("Book", record.ID),
+		ID:        record.GlobalID(),
 		BookTitle: record.BookTitle.Ptr(),
 	}, nil
 }
 
-// func (r *Resolver) books(ctx context.Context, after *string, before *string, first int, last *int, query string, orderBy []*model1.BookOrder) ([]*model.Book, error) {
-// 	realids, err := fromGlobalIDInt64s(ids, "Book")
+// func (r *Resolver) books(ctx context.Context, after *string, before *string, first int, last *int, query string, orderBy []*model.BookOrder) ([]*model.Book, error) {
+// 	realids, err := util.FromGlobalIDInt64s(ids, "Book")
 
 // 	if err != nil {
 // 		return nil, err
@@ -167,7 +206,7 @@ func (r *Resolver) BookByID(ctx context.Context, id string) (*model.Book, error)
 // }
 
 func (r *Resolver) booksByShopID(ctx context.Context, id string) ([]*model.Book, error) {
-	realid, err := fromGlobalIDInt64(id, "Shop")
+	realid, err := util.FromGlobalIDInt64(id, "Shop")
 
 	if err != nil {
 		return nil, err
@@ -182,7 +221,7 @@ func (r *Resolver) booksByShopID(ctx context.Context, id string) ([]*model.Book,
 	resp := make([]*model.Book, 0, len(records))
 	for _, record := range records {
 		resp = append(resp, &model.Book{
-			ID:        toGlobalIDInt64("Book", record.ID),
+			ID:        record.GlobalID(),
 			BookTitle: &record.BookTitle.String,
 		})
 	}

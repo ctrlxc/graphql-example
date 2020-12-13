@@ -13,6 +13,7 @@ import (
 	"sync"
 	"time"
 
+	"app/util"
 	"github.com/friendsofgo/errors"
 	"github.com/volatiletech/null/v8"
 	"github.com/volatiletech/sqlboiler/v4/boil"
@@ -1213,4 +1214,9 @@ func BookExists(ctx context.Context, exec boil.ContextExecutor, iD int64) (bool,
 	}
 
 	return exists, nil
+}
+
+// WARNING: required ID column
+func (o *Book) GlobalID() string {
+	return util.ToGlobalID("Book", o.ID)
 }

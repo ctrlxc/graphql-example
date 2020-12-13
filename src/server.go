@@ -1,17 +1,17 @@
 package main
 
 //go:generate gqlgen generate
-//go:generate sqlboiler --wipe psql
+//go:generate sqlboiler --wipe --templates "${GOPATH}/src/github.com/volatiletech/sqlboiler/templates,${GOPATH}/src/github.com/volatiletech/sqlboiler/templates_test,${GOPATH}/src/app/templates" psql
 
 import (
-	"fmt"
-	"log"
-	"net/http"
-	"os"
 	"app/graph"
 	"app/graph/generated"
 	"app/loader"
 	"app/repository"
+	"fmt"
+	"log"
+	"net/http"
+	"os"
 
 	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/99designs/gqlgen/graphql/playground"

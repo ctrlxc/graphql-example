@@ -64,5 +64,8 @@ models:
     fields:
       books:
         resolver: true
-      hoge:
-        fieldName: FullName
+  ShopConnection:
+    fields:
+      totalCount:
+        resolver: true
+    

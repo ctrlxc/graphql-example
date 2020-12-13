@@ -95,19 +95,19 @@ const (
 	BookOrderFieldID        BookOrderField = "ID"
 	BookOrderFieldBookTitle BookOrderField = "BOOK_TITLE"
 	BookOrderFieldCreatedAt BookOrderField = "CREATED_AT"
-	BookOrderFieldUpdateAt  BookOrderField = "UPDATE_AT"
+	BookOrderFieldUpdatedAt BookOrderField = "UPDATED_AT"
 )
 
 var AllBookOrderField = []BookOrderField{
 	BookOrderFieldID,
 	BookOrderFieldBookTitle,
 	BookOrderFieldCreatedAt,
-	BookOrderFieldUpdateAt,
+	BookOrderFieldUpdatedAt,
 }
 
 func (e BookOrderField) IsValid() bool {
 	switch e {
-	case BookOrderFieldID, BookOrderFieldBookTitle, BookOrderFieldCreatedAt, BookOrderFieldUpdateAt:
+	case BookOrderFieldID, BookOrderFieldBookTitle, BookOrderFieldCreatedAt, BookOrderFieldUpdatedAt:
 		return true
 	}
 	return false
@@ -181,19 +181,19 @@ const (
 	ShopOrderFieldID        ShopOrderField = "ID"
 	ShopOrderFieldShopName  ShopOrderField = "SHOP_NAME"
 	ShopOrderFieldCreatedAt ShopOrderField = "CREATED_AT"
-	ShopOrderFieldUpdateAt  ShopOrderField = "UPDATE_AT"
+	ShopOrderFieldUpdatedAt ShopOrderField = "UPDATED_AT"
 )
 
 var AllShopOrderField = []ShopOrderField{
 	ShopOrderFieldID,
 	ShopOrderFieldShopName,
 	ShopOrderFieldCreatedAt,
-	ShopOrderFieldUpdateAt,
+	ShopOrderFieldUpdatedAt,
 }
 
 func (e ShopOrderField) IsValid() bool {
 	switch e {
-	case ShopOrderFieldID, ShopOrderFieldShopName, ShopOrderFieldCreatedAt, ShopOrderFieldUpdateAt:
+	case ShopOrderFieldID, ShopOrderFieldShopName, ShopOrderFieldCreatedAt, ShopOrderFieldUpdatedAt:
 		return true
 	}
 	return false

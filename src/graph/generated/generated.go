@@ -39,6 +39,7 @@ type Config struct {
 type ResolverRoot interface {
 	Query() QueryResolver
 	Shop() ShopResolver
+	ShopConnection() ShopConnectionResolver
 }
 
 type DirectiveRoot struct {
@@ -74,7 +75,7 @@ type ComplexityRoot struct {
 	Query struct {
 		Node  func(childComplexity int, id string) int
 		Nodes func(childComplexity int, ids []string) int
-		Shops func(childComplexity int, after *string, before *string, first int, last *int, query string, orderBy []*model.ShopOrder) int
+		Shops func(childComplexity int, after *string, before *string, first *int, last *int, query string, orderBy []*model.ShopOrder) int
 	}
 
 	Shop struct {
@@ -101,10 +102,13 @@ type ComplexityRoot struct {
 type QueryResolver interface {
 	Node(ctx context.Context, id string) (model.Node, error)
 	Nodes(ctx context.Context, ids []string) ([]model.Node, error)
-	Shops(ctx context.Context, after *string, before *string, first int, last *int, query string, orderBy []*model.ShopOrder) (*model.ShopConnection, error)
+	Shops(ctx context.Context, after *string, before *string, first *int, last *int, query string, orderBy []*model.ShopOrder) (*model.ShopConnection, error)
 }
 type ShopResolver interface {
 	Books(ctx context.Context, obj *model.Shop) ([]*model.Book, error)
+}
+type ShopConnectionResolver interface {
+	TotalCount(ctx context.Context, obj *model.ShopConnection) (int, error)
 }
 
 type executableSchema struct {
@@ -254,7 +258,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.Shops(childComplexity, args["after"].(*string), args["before"].(*string), args["first"].(int), args["last"].(*int), args["query"].(string), args["orderBy"].([]*model.ShopOrder)), true
+		return e.complexity.Query.Shops(childComplexity, args["after"].(*string), args["before"].(*string), args["first"].(*int), args["last"].(*int), args["query"].(string), args["orderBy"].([]*model.ShopOrder)), true
 
 	case "Shop.books":
 		if e.complexity.Shop.Books == nil {
@@ -390,7 +394,7 @@ var sources = []*ast.Source{
   shops(
     after: Cursor
     before: Cursor
-    first: Int!
+    first: Int
     last: Int
     query: String!
     orderBy: [ShopOrder!] = [{field: CREATED_AT, direction: DESC}]
@@ -444,7 +448,7 @@ enum ShopOrderField {
   ID
   SHOP_NAME
   CREATED_AT
-  UPDATE_AT
+  UPDATED_AT
 }
 
 type Book implements Node {
@@ -475,7 +479,7 @@ enum BookOrderField {
   ID
   BOOK_TITLE
   CREATED_AT
-  UPDATE_AT
+  UPDATED_AT
 }
 
 enum OrderDirection {
@@ -583,10 +587,10 @@ func (ec *executionContext) field_Query_shops_args(ctx context.Context, rawArgs 
 		}
 	}
 	args["before"] = arg1
-	var arg2 int
+	var arg2 *int
 	if tmp, ok := rawArgs["first"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("first"))
-		arg2, err = ec.unmarshalNInt2int(ctx, tmp)
+		arg2, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -1238,7 +1242,7 @@ func (ec *executionContext) _Query_shops(ctx context.Context, field graphql.Coll
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().Shops(rctx, args["after"].(*string), args["before"].(*string), args["first"].(int), args["last"].(*int), args["query"].(string), args["orderBy"].([]*model.ShopOrder))
+		return ec.resolvers.Query().Shops(rctx, args["after"].(*string), args["before"].(*string), args["first"].(*int), args["last"].(*int), args["query"].(string), args["orderBy"].([]*model.ShopOrder))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -1602,14 +1606,14 @@ func (ec *executionContext) _ShopConnection_totalCount(ctx context.Context, fiel
 		Object:     "ShopConnection",
 		Field:      field,
 		Args:       nil,
-		IsMethod:   false,
-		IsResolver: false,
+		IsMethod:   true,
+		IsResolver: true,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.TotalCount, nil
+		return ec.resolvers.ShopConnection().TotalCount(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -3190,13 +3194,22 @@ func (ec *executionContext) _ShopConnection(ctx context.Context, sel ast.Selecti
 		case "pageInfo":
 			out.Values[i] = ec._ShopConnection_pageInfo(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "totalCount":
-			out.Values[i] = ec._ShopConnection_totalCount(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._ShopConnection_totalCount(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}

@@ -5,7 +5,7 @@ type Query {
   shops(
     after: Cursor
     before: Cursor
-    first: Int!
+    first: Int
     last: Int
     query: String!
     orderBy: [ShopOrder!] = [{field: CREATED_AT, direction: DESC}]
@@ -59,7 +59,7 @@ enum ShopOrderField {
   ID
   SHOP_NAME
   CREATED_AT
-  UPDATE_AT
+  UPDATED_AT
 }
 
 type Book implements Node {
@@ -90,7 +90,7 @@ enum BookOrderField {
   ID
   BOOK_TITLE
   CREATED_AT
-  UPDATE_AT
+  UPDATED_AT
 }
 
 enum OrderDirection {
