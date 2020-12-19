@@ -2,21 +2,13 @@ package graph
 
 import (
 	"app/globalid"
+	"app/graph/model"
 	"app/loader"
-	"app/models"
 	"app/pagination"
 	"app/repository"
 	"context"
 	"fmt"
 	"reflect"
-
-	// "errors"
-	"app/graph/model"
-
-	// "app/models"
-
-	_ "github.com/lib/pq"
-	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 )
 
 // This file will not be regenerated automatically.
@@ -101,13 +93,15 @@ func (r *Resolver) ShopByID(ctx context.Context, id string) (*model.Shop, error)
 }
 
 func (r *Resolver) shops(ctx context.Context, after *string, before *string, first *int, last *int, query string, orderBy []*model.ShopOrder) (*model.ShopConnection, error) {
-	condtion := qm.Where(fmt.Sprintf("%s like ?", models.ShopColumns.ShopName), fmt.Sprintf("%%%s%%", query))
+	paginator := pagination.NewPaginator(
+		after,
+		before,
+		first,
+		last,
+		model.ShopOrderToPaginationOrders(orderBy),
+	)
 
-	pagination := pagination.Pagination{after, before, first, last, model.ShopOrderToPaginationOrders(orderBy)}
-
-	shops, err := models.Shops(
-		pagination.Queries(condtion)...,
-	).All(ctx, r.repo.Db)
+	shops, err := r.repo.ShopsByName(ctx, query, paginator)
 
 	if err != nil {
 		return nil, err
@@ -120,15 +114,15 @@ func (r *Resolver) shops(ctx context.Context, after *string, before *string, fir
 	}
 
 	limit := len(shops)
-	if limit > pagination.Limit() {
-		limit = pagination.Limit()
+	if limit > paginator.Limit() {
+		limit = paginator.Limit()
 	}
 
 	conn.Edges = make([]*model.ShopEdge, limit)
 	conn.Nodes = make([]*model.Shop, limit)
 
 	for i, s := range shops[:limit] {
-		cursor, _ := pagination.CreateEncodedCursor(s)
+		cursor, _ := paginator.CreateEncodedCursor(s)
 
 		node := &model.Shop{
 			ID:        s.GlobalID(),
@@ -138,7 +132,7 @@ func (r *Resolver) shops(ctx context.Context, after *string, before *string, fir
 		}
 
 		pos := i
-		if !pagination.IsAfter() {
+		if !paginator.IsAfter() {
 			pos = len(conn.Edges) - i - 1
 		}
 
@@ -152,14 +146,14 @@ func (r *Resolver) shops(ctx context.Context, after *string, before *string, fir
 	}
 
 	if len(shops) > limit {
-		if pagination.IsAfter() {
+		if paginator.IsAfter() {
 			conn.PageInfo.HasNextPage = true
 		} else {
 			conn.PageInfo.HasPreviousPage = true
 		}
 	}
 
-	totalCount, err := models.Shops(condtion).Count(ctx, r.repo.Db)
+	totalCount, err := r.repo.ShopsCountByName(ctx, query)
 
 	if err != nil {
 		return conn, err
@@ -186,17 +180,21 @@ func (r *Resolver) BookByID(ctx context.Context, id string) (*model.Book, error)
 	return &model.Book{
 		ID:        record.GlobalID(),
 		BookTitle: record.BookTitle.Ptr(),
+		CreatedAt: &record.CreatedAt,
+		UpdatedAt: &record.UpdatedAt,
 	}, nil
 }
 
 func (r *Resolver) books(ctx context.Context, after *string, before *string, first *int, last *int, query string, orderBy []*model.BookOrder) (*model.BookConnection, error) {
-	condition := qm.Where(fmt.Sprintf("%s like ?", models.BookColumns.BookTitle), fmt.Sprintf("%%%s%%", query))
+	paginator := pagination.NewPaginator(
+		after,
+		before,
+		first,
+		last,
+		model.BookOrderToPaginationOrders(orderBy),
+	)
 
-	pagination := pagination.Pagination{after, before, first, last, model.BookOrderToPaginationOrders(orderBy)}
-
-	books, err := models.Books(
-		pagination.Queries(condition)...,
-	).All(ctx, r.repo.Db)
+	books, err := r.repo.BoolsByTitle(ctx, query, paginator)
 
 	if err != nil {
 		return nil, err
@@ -209,15 +207,15 @@ func (r *Resolver) books(ctx context.Context, after *string, before *string, fir
 	}
 
 	limit := len(books)
-	if limit > pagination.Limit() {
-		limit = pagination.Limit()
+	if limit > paginator.Limit() {
+		limit = paginator.Limit()
 	}
 
 	conn.Edges = make([]*model.BookEdge, limit)
 	conn.Nodes = make([]*model.Book, limit)
 
 	for i, s := range books[:limit] {
-		cursor, _ := pagination.CreateEncodedCursor(s)
+		cursor, _ := paginator.CreateEncodedCursor(s)
 
 		node := &model.Book{
 			ID:        s.GlobalID(),
@@ -227,7 +225,7 @@ func (r *Resolver) books(ctx context.Context, after *string, before *string, fir
 		}
 
 		pos := i
-		if !pagination.IsAfter() {
+		if !paginator.IsAfter() {
 			pos = len(conn.Edges) - i - 1
 		}
 
@@ -241,14 +239,14 @@ func (r *Resolver) books(ctx context.Context, after *string, before *string, fir
 	}
 
 	if len(books) > limit {
-		if pagination.IsAfter() {
+		if paginator.IsAfter() {
 			conn.PageInfo.HasNextPage = true
 		} else {
 			conn.PageInfo.HasPreviousPage = true
 		}
 	}
 
-	totalCount, err := models.Books(condition).Count(ctx, r.repo.Db)
+	totalCount, err := r.repo.BooksCountByTitle(ctx, query)
 
 	if err != nil {
 		return conn, err

@@ -11,7 +11,7 @@ const (
 	defaultLimit = 10 // FIXME: from settings file
 )
 
-type Pagination struct {
+type Paginator struct {
 	After  *string
 	Before *string
 	First  *int
@@ -31,7 +31,17 @@ type Order struct {
 	Direction Direction
 }
 
-func (p *Pagination) Queries(mods ...qm.QueryMod) []qm.QueryMod {
+func NewPaginator(after *string, before *string, first *int, last *int, orders []*Order) *Paginator {
+	return &Paginator{
+		After:  after,
+		Before: before,
+		First:  first,
+		Last:   last,
+		Orders: orders,
+	}
+}
+
+func (p *Paginator) Queries(mods ...qm.QueryMod) []qm.QueryMod {
 	return append(mods, []qm.QueryMod{
 		p.QueryWhere(),
 		p.QueryOrderBy(),
@@ -39,8 +49,8 @@ func (p *Pagination) Queries(mods ...qm.QueryMod) []qm.QueryMod {
 	}...)
 }
 
-// @@@ not support nullable column
-func (p *Pagination) QueryWhere() qm.QueryMod {
+// WARNING: not support nullable column
+func (p *Paginator) QueryWhere() qm.QueryMod {
 	cursorstr := p.validCursor()
 
 	if cursorstr == nil {
@@ -74,7 +84,7 @@ func (p *Pagination) QueryWhere() qm.QueryMod {
 	return qm.Where(query, binds...)
 }
 
-func (p *Pagination) QueryOrderBy() qm.QueryMod {
+func (p *Paginator) QueryOrderBy() qm.QueryMod {
 	if len(p.Orders) == 0 || p.Orders[len(p.Orders)-1].Field != "id" {
 		p.Orders = append(p.Orders, &Order{"id", Asc})
 	}
@@ -91,11 +101,11 @@ func (p *Pagination) QueryOrderBy() qm.QueryMod {
 	return qm.OrderBy(orderBy)
 }
 
-func (p *Pagination) QueryLimit() qm.QueryMod {
+func (p *Paginator) QueryLimit() qm.QueryMod {
 	return qm.Limit(p.Limit() + 1)
 }
 
-func (p *Pagination) Limit() int {
+func (p *Paginator) Limit() int {
 	limit := defaultLimit
 
 	if p.IsAfter() && p.First != nil && *p.First > 0 {
@@ -107,7 +117,7 @@ func (p *Pagination) Limit() int {
 	return limit
 }
 
-func (p *Pagination) operator(d Direction) string {
+func (p *Paginator) operator(d Direction) string {
 	if (p.IsAfter() && d == Asc) ||
 		(!p.IsAfter() && d == Desc) {
 		return ">"
@@ -116,7 +126,7 @@ func (p *Pagination) operator(d Direction) string {
 	return "<"
 }
 
-func (p *Pagination) direction(d Direction) Direction {
+func (p *Paginator) direction(d Direction) Direction {
 	if p.IsAfter() {
 		return d
 	}
@@ -128,7 +138,7 @@ func (p *Pagination) direction(d Direction) Direction {
 	return Asc
 }
 
-func (p *Pagination) IsAfter() bool {
+func (p *Paginator) IsAfter() bool {
 	if p.hasAfterCursor() {
 		return true
 	}
@@ -146,15 +156,15 @@ func (p *Pagination) IsAfter() bool {
 	return false
 }
 
-func (p *Pagination) hasAfterCursor() bool {
+func (p *Paginator) hasAfterCursor() bool {
 	return p.After != nil
 }
 
-func (p *Pagination) hasBeforeCursor() bool {
+func (p *Paginator) hasBeforeCursor() bool {
 	return !p.hasAfterCursor() && p.Before != nil
 }
 
-func (p *Pagination) validCursor() *string {
+func (p *Paginator) validCursor() *string {
 	if p.hasAfterCursor() {
 		return p.After
 	}

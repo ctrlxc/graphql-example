@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"app/globalid"
+	"app/pagination"
 	"github.com/friendsofgo/errors"
 	"github.com/volatiletech/null/v8"
 	"github.com/volatiletech/sqlboiler/v4/boil"
@@ -23,9 +24,17 @@ import (
 	"github.com/volatiletech/strmangle"
 )
 
-// WARNING: required ID column
+// convert id -> globalid
 func (o *Stock) GlobalID() string {
 	return globalid.ToGlobalID("Stock", o.ID)
+}
+
+// Stocks retrieves patination the records using an executor.
+func StocksPaginate(paginator *pagination.Paginator, mods ...qm.QueryMod) stockQuery {
+	queries := paginator.Queries()
+	mods = append(mods, queries...)
+
+	return Stocks(mods...)
 }
 
 // Stock is an object representing the database table.

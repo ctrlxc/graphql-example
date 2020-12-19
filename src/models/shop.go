@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"app/globalid"
+	"app/pagination"
 	"github.com/friendsofgo/errors"
 	"github.com/volatiletech/null/v8"
 	"github.com/volatiletech/sqlboiler/v4/boil"
@@ -23,9 +24,17 @@ import (
 	"github.com/volatiletech/strmangle"
 )
 
-// WARNING: required ID column
+// convert id -> globalid
 func (o *Shop) GlobalID() string {
 	return globalid.ToGlobalID("Shop", o.ID)
+}
+
+// Shops retrieves patination the records using an executor.
+func ShopsPaginate(paginator *pagination.Paginator, mods ...qm.QueryMod) shopQuery {
+	queries := paginator.Queries()
+	mods = append(mods, queries...)
+
+	return Shops(mods...)
 }
 
 // Shop is an object representing the database table.

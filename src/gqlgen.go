@@ -1,3 +1,5 @@
+// +build ignore
+
 package main
 
 import (
@@ -17,7 +19,7 @@ func main() {
 	}
 
 	err = api.Generate(cfg,
-		api.AddPlugin(ordergen.New("orders_gen.go")), // This is the magic line
+		api.AddPlugin(ordergen.New("orders_gen.go")),
 	)
 
 	if err != nil {

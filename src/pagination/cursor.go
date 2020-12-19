@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"reflect"
 
-	"github.com/volatiletech/sqlboiler/strmangle"
+	"github.com/volatiletech/strmangle"
 )
 
 type Cursor struct {
@@ -19,7 +19,7 @@ type CursorItem struct {
 	ValueType string      `json:"value_type"`
 }
 
-func (p *Pagination) CursorEncode(cursor *Cursor) (string, error) {
+func (p *Paginator) CursorEncode(cursor *Cursor) (string, error) {
 	b, err := json.Marshal(cursor)
 
 	if err != nil {
@@ -29,7 +29,7 @@ func (p *Pagination) CursorEncode(cursor *Cursor) (string, error) {
 	return base64.StdEncoding.EncodeToString(b), nil
 }
 
-func (p *Pagination) CursorDecode(cursorstr string) (*Cursor, error) {
+func (p *Paginator) CursorDecode(cursorstr string) (*Cursor, error) {
 	b, err := base64.StdEncoding.DecodeString(cursorstr)
 
 	if err != nil {
@@ -57,7 +57,7 @@ func (p *Pagination) CursorDecode(cursorstr string) (*Cursor, error) {
 	return &cursor, nil
 }
 
-func (p *Pagination) CreateCursor(v interface{}) *Cursor {
+func (p *Paginator) CreateCursor(v interface{}) *Cursor {
 	rv := reflectValue(v)
 
 	for rv.Kind() == reflect.Ptr {
@@ -82,7 +82,7 @@ func (p *Pagination) CreateCursor(v interface{}) *Cursor {
 	return &Cursor{Items: items}
 }
 
-func (p *Pagination) CreateEncodedCursor(v interface{}) (string, error) {
+func (p *Paginator) CreateEncodedCursor(v interface{}) (string, error) {
 	c := p.CreateCursor(v)
 	return p.CursorEncode(c)
 }

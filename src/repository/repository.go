@@ -3,10 +3,12 @@ package repository
 import (
 	"database/sql"
 	"fmt"
+
+	_ "github.com/lib/pq"
 )
 
 type Repository struct {
-	Db *sql.DB
+	db *sql.DB
 }
 
 func New(dsn string) (*Repository, error) {
@@ -16,5 +18,5 @@ func New(dsn string) (*Repository, error) {
 		return nil, fmt.Errorf("Opening database failed: %v", err)
 	}
 
-	return &Repository{Db: db}, nil
+	return &Repository{db: db}, nil
 }

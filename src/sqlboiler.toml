@@ -27,5 +27,5 @@
     '"github.com/volatiletech/sqlboiler/v4/queries/qm"',
     '"github.com/volatiletech/sqlboiler/v4/queries/qmhelper"',
     '"github.com/volatiletech/strmangle"',
-    '"app/globalid"'
+    '"app/globalid"',
   ]

@@ -16,6 +16,7 @@ func BookOrderToPaginationOrders(orders []*BookOrder) []*pagination.Order {
 
 	return paginationOrders
 }
+
 func ShopOrderToPaginationOrders(orders []*ShopOrder) []*pagination.Order {
 	paginationOrders := make([]*pagination.Order, len(orders))
 

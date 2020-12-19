@@ -23,26 +23,26 @@ var _ plugin.CodeGenerator = &Plugin{}
 var _ plugin.ConfigMutator = &Plugin{}
 
 func (m *Plugin) Name() string {
-	return "customgen"
+	return "ordergen"
 }
 
 func (m *Plugin) MutateConfig(cfg *config.Config) error {
-	_ = syscall.Unlink(m.filepath2(cfg))
+	_ = syscall.Unlink(m.filepath(cfg))
 	return nil
 }
 
 func (m *Plugin) GenerateCode(data *codegen.Data) error {
-	orders := make([]string, 0)
+	orders := make(codegen.Objects, 0)
 
-	for _, r := range data.Inputs {
-		if strings.HasSuffix(r.Definition.Name, "Order") {
-			orders = append(orders, r.Definition.Name)
+	for _, o := range data.Inputs {
+		if strings.HasSuffix(o.Definition.Name, "Order") {
+			orders = append(orders, o)
 		}
 	}
 
 	return templates.Render(templates.Options{
 		PackageName: data.Config.Model.Package,
-		Filename:    m.filepath2(data.Config),
+		Filename:    m.filepath(data.Config),
 		Data: &OrderBuild{
 			Orders: orders,
 		},
@@ -51,10 +51,10 @@ func (m *Plugin) GenerateCode(data *codegen.Data) error {
 	})
 }
 
-func (m *Plugin) filepath2(cfg *config.Config) string {
+func (m *Plugin) filepath(cfg *config.Config) string {
 	return filepath.Join(filepath.Dir(cfg.Model.Filename), m.filename)
 }
 
 type OrderBuild struct {
-	Orders []string
+	Orders codegen.Objects
 }
