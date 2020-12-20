@@ -1,3 +1,13 @@
+output   = "models"
+wipe     = true
+no-tests = true
+
+templates = [
+  "/go/src/github.com/volatiletech/sqlboiler/templates",
+  "/go/src/github.com/volatiletech/sqlboiler/templates_test",
+  "/go/src/app/sqlboiler_templates",
+]
+
 [psql]
   dbname = "graphql"
   host   = "postgres"

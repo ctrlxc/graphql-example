@@ -1,7 +1,7 @@
 package main
 
 //go:generate go run gqlgen.go
-//go:generate sqlboiler --wipe --templates "${GOPATH}/src/github.com/volatiletech/sqlboiler/templates,${GOPATH}/src/github.com/volatiletech/sqlboiler/templates_test,${GOPATH}/src/app/sqlboiler_templates" psql
+//go:generate sqlboiler psql
 
 import (
 	"app/graph"
@@ -62,7 +62,7 @@ func run(_ []string) error {
 
 // Middleware for attaching data loaders for GraphQL
 func loaderMiddleware(next http.Handler, repo *repository.Repository) http.Handler {
-	loaders := loader.New(repo)
+	loaders := loader.NewLoaders(repo)
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		next.ServeHTTP(w, r.WithContext(loaders.Attach(r.Context())))

@@ -14,7 +14,6 @@ import (
 	"time"
 
 	"app/globalid"
-	"app/pagination"
 	"github.com/friendsofgo/errors"
 	"github.com/volatiletech/null/v8"
 	"github.com/volatiletech/sqlboiler/v4/boil"
@@ -27,14 +26,6 @@ import (
 // convert id -> globalid
 func (o *Book) GlobalID() string {
 	return globalid.ToGlobalID("Book", o.ID)
-}
-
-// Books retrieves patination the records using an executor.
-func BooksPaginate(paginator *pagination.Paginator, mods ...qm.QueryMod) bookQuery {
-	queries := paginator.Queries()
-	mods = append(mods, queries...)
-
-	return Books(mods...)
 }
 
 // Book is an object representing the database table.

@@ -1,19 +1,19 @@
 package loader
 
 import (
+	"app/repository"
 	"context"
 	"fmt"
-	"app/repository"
 
 	"github.com/graph-gophers/dataloader"
 )
 
-type Loaders interface {
-	Attach(context.Context) context.Context
+type Loaders struct {
+	batchFuncs map[string]dataloader.BatchFunc
 }
 
-func New(repo *repository.Repository) Loaders {
-	return &loaders{
+func NewLoaders(repo *repository.Repository) *Loaders {
+	return &Loaders{
 		batchFuncs: map[string]dataloader.BatchFunc{
 			shopLoaderKey: newShopLoader(repo),
 			bookLoaderKey: newBookLoader(repo),
@@ -21,11 +21,7 @@ func New(repo *repository.Repository) Loaders {
 	}
 }
 
-type loaders struct {
-	batchFuncs map[string]dataloader.BatchFunc
-}
-
-func (c *loaders) Attach(ctx context.Context) context.Context {
+func (c *Loaders) Attach(ctx context.Context) context.Context {
 	for key, batchFn := range c.batchFuncs {
 		ctx = context.WithValue(ctx, key, dataloader.NewBatchedLoader(batchFn))
 	}
@@ -35,8 +31,9 @@ func (c *loaders) Attach(ctx context.Context) context.Context {
 
 func getLoader(ctx context.Context, key string) (*dataloader.Loader, error) {
 	ldr, ok := ctx.Value(key).(*dataloader.Loader)
+
 	if !ok {
-		return nil, fmt.Errorf("unable to find %s loader from the request context", key)
+		return nil, fmt.Errorf("no loader: %s", key)
 	}
 
 	return ldr, nil
