@@ -89,15 +89,17 @@ func (r *queryResolver) Node(ctx context.Context, id string) (model.Node, error)
 
 ```go
 func (r *Resolver) node(ctx context.Context, id string) (model.Node, error) {
-    // データ取得やデータ加工などをして　`mode.Node` を生成して返す
+	// データ取得やデータ加工などをして　`mode.Node` を生成して返す
 	return model.Node{}, nil
 }
 ```
 
 ## データベースへのアクセス
 
-ORMの[sqlboiler](https://github.com/volatiletech/sqlboiler)を使用します。  
-データベースドリブンでのORMコードを自動生成します。
+ORMの[sqlboiler](https://github.com/volatiletech/sqlboiler)を使用します。
+
+データベースドリブンでORMコードを自動生成するため  
+データベースやテーブルは事前に作成しておいてください。
 
 ### データベースからORMコードを自動生成
 
