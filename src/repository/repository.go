@@ -11,7 +11,7 @@ type Repository struct {
 	db *sql.DB
 }
 
-func New(dsn string) (*Repository, error) {
+func NewRepository(dsn string) (*Repository, error) {
 	db, err := sql.Open("postgres", dsn)
 
 	if err != nil {

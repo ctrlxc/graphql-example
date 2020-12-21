@@ -8,12 +8,12 @@ import (
 	"github.com/graph-gophers/dataloader"
 )
 
-type Loaders struct {
+type Loader struct {
 	batchFuncs map[string]dataloader.BatchFunc
 }
 
-func NewLoaders(repo *repository.Repository) *Loaders {
-	return &Loaders{
+func NewLoader(repo *repository.Repository) *Loader {
+	return &Loader{
 		batchFuncs: map[string]dataloader.BatchFunc{
 			shopLoaderKey: newShopLoader(repo),
 			bookLoaderKey: newBookLoader(repo),
@@ -21,7 +21,7 @@ func NewLoaders(repo *repository.Repository) *Loaders {
 	}
 }
 
-func (c *Loaders) Attach(ctx context.Context) context.Context {
+func (c *Loader) Attach(ctx context.Context) context.Context {
 	for key, batchFn := range c.batchFuncs {
 		ctx = context.WithValue(ctx, key, dataloader.NewBatchedLoader(batchFn))
 	}

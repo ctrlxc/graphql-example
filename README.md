@@ -74,13 +74,13 @@ func (r *queryResolver) Node(ctx context.Context, id string) ([]*model.Node, err
 - schema.resolvers.go  - 半自動生成されるのでシンプルな実装を保つ。本来の処理は`resolver.go`に移譲する
 - resolver.go          - リゾルバー本体。データ取得やデータ加工などのリゾルバーとしての本来の実装は主にここで行う
 
-こんなイメージの実装になります。
+以下のような実装になります。
 
 `graph/schema.resolvers.go`
 
 ```diff
 func (r *queryResolver) Node(ctx context.Context, id string) (model.Node, error) {
--    panic(fmt.Errorf("not implemented"))
+-	panic(fmt.Errorf("not implemented"))
 +	return r.node(ctx, id) // resolver.go に処理を移譲
 }
 ```
@@ -94,9 +94,10 @@ func (r *Resolver) node(ctx context.Context, id string) (model.Node, error) {
 }
 ```
 
-## データベースのアクセス
+## データベースへのアクセス
 
 ORMの[sqlboiler](https://github.com/volatiletech/sqlboiler)を使用します。  
+データベースドリブンでのORMコードを自動生成します。
 
 ### データベースからORMコードを自動生成
 
@@ -113,7 +114,7 @@ ORMの[sqlboiler](https://github.com/volatiletech/sqlboiler)を使用します�
   schema = "graphql"
 ```
 
-以下のコマンドでデータベースからORMコードを自動生成します。
+以下のコマンドでORMコードを自動生成します。
 
 ```sh
 go get -u github.com/lib/pq
@@ -130,14 +131,48 @@ app
 
 ### リポジトリパターン
 
-データベースへのアクセス処理がアプリケーションのコード中に散在しないようにするためにリポジトリパターンを採用します。  
+クエリの構築などデータベース固有の処理がアプリケーションのコード中に散在しないようにリポジトリパターンを採用します。  
 sqlboilerで自動生成されたデータ取得／更新のAPIの呼び出しは基本的には全てリポジトリを経由して行います。
 
 ```
-アプリケーションコード -> リポジトリ -> sqlboilerの自動生成コード -> データベース
+アプリケーションコード -> リポジトリコード -> sqlboilerの自動生成コード -> データベース
 ```
 
-`app/repository`以下にアプリケーションで必要なI/Fを追加してください。
+以下にアプリケーションで必要なデータベースへのアクセス用のAPIを追加します。
+
+```txt
+app
+└── repository
+    ├── repository.go  - Repositoryの共通関数を定義します。
+    └── *.go           - テーブルやエンティティ毎に分けて作成します。
+```
+
+以下のような実装になります。
+
+```go
+func (r *Repository) ShopByID(ctx context.Context, id int64) (*models.Shop, error) {
+	return models.FindShop(ctx, r.db, id)
+}
+
+func (r *Repository) ShopsByIDs(ctx context.Context, ids []int64) ([]*models.Shop, error) {
+	return models.Shops(models.ShopWhere.ID.IN(ids)).All(ctx, r.db)
+}
+
+func (r *Repository) ShopsByName(ctx context.Context, name string, paginator *pagination.Paginator) ([]*models.Shop, error) {
+	condition := qm.Where(fmt.Sprintf("%s like ?", models.ShopColumns.ShopName), fmt.Sprintf("%%%s%%", name))
+
+	if paginator != nil {
+		return models.Shops(paginator.Queries(condition)...).All(ctx, r.db)
+	}
+
+	return models.Shops(condition).All(ctx, r.db)
+}
+
+func (r *Repository) ShopsCountByName(ctx context.Context, name string) (int64, error) {
+	condition := qm.Where(fmt.Sprintf("%s like ?", models.ShopColumns.ShopName), fmt.Sprintf("%%%s%%", name))
+	return models.Shops(condition).Count(ctx, r.db)
+}
+```
 
 ## DataLoader
 
@@ -145,18 +180,114 @@ N+1問題への対応として[graph-gophers/dataloader](https://github.com/grap
 
 ### DataLoaderの作成
 
-`loader`以下に手動で作成します。
+以下にアプリケーションで必要なLoaderを追加します。
 
 ```txt
 app
 └── loader
-    └── *.go     - `loader`以下に手動で作成します。
+    ├── loader.go   - Loaderの共通関数を定義します。
+    └── *.go        - テーブルやエンティティ毎に分けて作成します。
 ```
 
-以下を参考にして作成してください。
+以下のような実装になります。
 
-- `loader/shop.go`
-- `loader/book.go`
+```go
+package loader
+
+import (
+	"context"
+	"errors"
+	"fmt"
+	"reflect"
+
+	"app/models"
+	"app/repository"
+
+	"github.com/graph-gophers/dataloader"
+)
+
+const shopLoaderKey = "shopLoader"
+
+type shopIDKey struct {
+	id int64
+}
+
+func (key shopIDKey) String() string {
+	return fmt.Sprintf("%s/%v", reflect.TypeOf(key).Name(), key.id) // should be global unique
+}
+
+func (key shopIDKey) Raw() interface{} {
+	return key.id
+}
+
+func LoadShop(ctx context.Context, id int64) (*models.Shop, error) {
+	ldr, err := getLoader(ctx, shopLoaderKey)
+	if err != nil {
+		return nil, err
+	}
+
+	data, err := ldr.Load(ctx, shopIDKey{id: id})()
+	if err != nil {
+		return nil, err
+	}
+
+	return data.(*models.Shop), nil
+}
+
+func LoadShops(ctx context.Context, ids []int64) ([]*models.Shop, error) {
+	ldr, err := getLoader(ctx, shopLoaderKey)
+	if err != nil {
+		return nil, err
+	}
+
+	shopIDs := make(dataloader.Keys, len(ids))
+	for i, id := range ids {
+		shopIDs[i] = shopIDKey{id: id}
+	}
+
+	datas, errs := ldr.LoadMany(ctx, shopIDs)()
+	if len(errs) != 0 {
+		return nil, errs[0]
+	}
+
+	shops := make([]*models.Shop, len(datas))
+	for i, data := range datas {
+		shops[i] = data.(*models.Shop)
+	}
+
+	return shops, nil
+}
+
+func newShopLoader(repo *repository.Repository) dataloader.BatchFunc {
+	return func(ctx context.Context, keys dataloader.Keys) []*dataloader.Result {
+		results := make([]*dataloader.Result, len(keys))
+		shopIDs := make([]int64, len(keys))
+
+		for i, key := range keys {
+			shopIDs[i] = key.(shopIDKey).id
+		}
+
+		shops, _ := repo.ShopsByIDs(ctx, shopIDs)
+
+		for i, key := range keys {
+			results[i] = &dataloader.Result{Data: nil, Error: nil}
+
+			for _, shop := range shops {
+				if key.(shopIDKey).id == shop.ID {
+					results[i].Data = shop
+					continue
+				}
+			}
+
+			if results[i].Data == nil {
+				results[i].Error = errors.New("Shop not found")
+			}
+		}
+
+		return results
+	}
+}
+```
 
 ### DataLoaderのインスタンスの生成
 
@@ -168,7 +299,7 @@ app
 func NewLoaders(repo *repository.Repository) *Loaders {
 	return &Loaders{
 		batchFuncs: map[string]dataloader.BatchFunc{
-            // 作成したDataLoaderのインスタンスをここで追加していきます。
+			// ここに作成したDataLoaderのインスタンスを追加していきます。
 			shopLoaderKey: newShopLoader(repo),
 			bookLoaderKey: newBookLoader(repo),
 		},
@@ -178,7 +309,7 @@ func NewLoaders(repo *repository.Repository) *Loaders {
 
 ### リクエスト単位でキャッシュ
 
-リクエスト単位の[キャッシュ](https://github.com/graph-gophers/dataloader#cache)とするため  
+[リクエスト単位のキャッシュ](https://github.com/graph-gophers/dataloader#cache)とするため  
 MiddlewareでcontextにDataLoaderのインスタンスを保持させます。　　
 
 `main.go` 
@@ -202,11 +333,11 @@ func loaderMiddleware(next http.Handler, repo *repository.Repository) http.Handl
 ```txt
 app
 └── pagination
-    ├── cursor.go         - カーソルのエンコード／デコードを行います。
+    ├── cursor.go         - カーソルのエンコード／デコード(base64)を行います。
     └── pagination.go     - ページネーションを行うための`sqlboiler｀のクエリを生成します。
 ```
 
-こんな感じの使い方になります。
+以下のような使い方になります。
 
 ```go
 // graph/resolver.go

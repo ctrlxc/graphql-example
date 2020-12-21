@@ -38,7 +38,7 @@ func run(_ []string) error {
 		dsn = defaultDsn
 	}
 
-	repo, err := repository.New(dsn)
+	repo, err := repository.NewRepository(dsn)
 	if err != nil {
 		return fmt.Errorf("failed to create repository: %+v", err)
 	}
@@ -62,9 +62,9 @@ func run(_ []string) error {
 
 // Middleware for attaching data loaders for GraphQL
 func loaderMiddleware(next http.Handler, repo *repository.Repository) http.Handler {
-	loaders := loader.NewLoaders(repo)
+	loader := loader.NewLoader(repo)
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		next.ServeHTTP(w, r.WithContext(loaders.Attach(r.Context())))
+		next.ServeHTTP(w, r.WithContext(loader.Attach(r.Context())))
 	})
 }
