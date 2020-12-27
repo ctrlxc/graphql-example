@@ -29,7 +29,7 @@ gqlgen推奨のプロジェクトのスケルトンが作成されます。
 app
 ├── go.mod
 ├── go.sum
-├── gqlgen.yml               - gqlgenの設定ファイル。後で編集していきます
+├── gqlgen.yml               - gqlgenの設定ファイル。後で編集していきます。
 ├── graph
 │   ├── generated            - `schema.graphql`からクエリのパース処理などを行うruntimeが自動生成されます。`DO NOT EDIT.`
 │   │   └── generated.go
@@ -38,13 +38,7 @@ app
 │   ├── resolver.go          - リゾルバー本体です。ここを主に実装していきます。
 │   ├── schema.graphqls      - ここに`Schema`を定義していきます。
 │   └── schema.resolvers.go  - `schema.graphql`からエンドポイントのスケルトンが自動生成されます。
-└── server.go                - エントリーポイント。個人的な好みでmain.goにリネームしました。
-```
-
-個人的に`server.go`より`main.go`の方がエントリーポイントとして分かりやすいと考えたのでリネームしました。
-
-```
-mv server.go main.go
+└── server.go                - エントリーポイント。
 ```
 
 ### Schemaを定義
@@ -314,7 +308,7 @@ func NewLoaders(repo *repository.Repository) *Loaders {
 [リクエスト単位のキャッシュ](https://github.com/graph-gophers/dataloader#cache)とするため  
 MiddlewareでcontextにDataLoaderのインスタンスを保持させます。　　
 
-`main.go` 
+`server.go` 
 
 ```go
 // Middleware for attaching data loaders for GraphQL
