@@ -14,8 +14,12 @@ CREATE TABLE shop (
 );
 
 INSERT INTO shop (shop_name, created_at, updated_at) VALUES
-    ('shop-name-1', now(), now()),
-    ('shop-name-2', now(), now());
+    ('shop-name-1', '2020/01/01 00:00:00'::timestamp without time zone, '2020/01/05 00:00:00'::timestamp without time zone),
+    ('shop-name-2', '2020/01/02 00:00:00'::timestamp without time zone, '2020/01/04 00:00:00'::timestamp without time zone),
+    ('shop-name-3', '2020/01/03 00:00:00'::timestamp without time zone, '2020/01/03 00:00:00'::timestamp without time zone),
+    ('shop-name-4', '2020/01/04 00:00:00'::timestamp without time zone, '2020/01/02 00:00:00'::timestamp without time zone),
+    ('shop-name-5', '2020/01/05 00:00:00'::timestamp without time zone, '2020/01/01 00:00:00'::timestamp without time zone)
+;
 
 CREATE TABLE book (
     id bigserial primary key,
@@ -25,9 +29,10 @@ CREATE TABLE book (
 );
 
 INSERT INTO book (book_title, created_at, updated_at) VALUES
-    ('book-title-1', now(), now()),
-    ('book-title-2', now(), now()),
-    ('book-title-3', now(), now());
+    ('book-title-1', '2020/01/01 00:00:00'::timestamp without time zone, '2020/01/03 00:00:00'::timestamp without time zone),
+    ('book-title-2', '2020/01/02 00:00:00'::timestamp without time zone, '2020/01/02 00:00:00'::timestamp without time zone),
+    ('book-title-3', '2020/01/03 00:00:00'::timestamp without time zone, '2020/01/01 00:00:00'::timestamp without time zone)
+;
 
 CREATE TABLE stock (
     id bigserial primary key,
@@ -41,4 +46,5 @@ INSERT INTO stock (shop_id, book_id, created_at, updated_at) VALUES
     (1, 1, now(), now()),
     (1, 2, now(), now()),
     (2, 2, now(), now()),
-    (2, 3, now(), now());
+    (2, 3, now(), now())
+;

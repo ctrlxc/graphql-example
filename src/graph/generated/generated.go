@@ -407,7 +407,7 @@ var sources = []*ast.Source{
     first: Int
     last: Int
     query: String!
-    orderBy: [ShopOrder!] = [{field: CREATED_AT, direction: DESC}]
+    orderBy: [ShopOrder!] = [{field: CREATED_AT, direction: ASC}]
   ): ShopConnection!
 
   books(
@@ -416,7 +416,7 @@ var sources = []*ast.Source{
     first: Int
     last: Int
     query: String!
-    orderBy: [BookOrder!] = [{field: CREATED_AT, direction: DESC}]
+    orderBy: [BookOrder!] = [{field: CREATED_AT, direction: ASC}]
   ): BookConnection!
 }
 
